@@ -3,6 +3,7 @@ An pure implementation of a QAM that can only exectute protoQuil
 """
 from referenceqvm.unitary_generator import tensor_gates
 from referenceqvm.gates import gate_matrix
+from referenceqvm.utilities import clense_program
 import numpy as np
 
 
@@ -15,13 +16,15 @@ class QVM(object):
     M A C H I N E
     """
     def __init__(self, qubits=None, program=None, program_counter=None,
-                 wf=None, rho=None, classical_memory=None, gate_set=None):
+                 wf=None, rho=None, classical_memory=None, gate_set=None,
+                 unitary=None):
         """
         STATE MACHINE MODEL OF THE QVM
         """
         self.num_qubits = qubits
         self.wf = wf
         self.rho = rho
+        self.unitary = unitary
         self.classical_memory = classical_memory
         self.program = map(lambda x: x[1], program.actions)  # get rid of instruction index
         self.program_counter = program_counter
@@ -52,6 +55,15 @@ def run_rho(qvm):
     return qvm
 
 
+def run_unitary(qvm):
+    """
+    Run the QVM in generate unitary mode
+    """
+    while qvm.program_counter < len(qvm.program):
+        unitary_transition(qvm, qvm.current_instruction())
+    return qvm
+
+
 def wf_transition(qvm, instruction):
     """
     Transition the vqam with the instruction
@@ -75,6 +87,19 @@ def rho_transition(qvm, instruction):
         # get the unitary and evolve the state
         unitary = tensor_gates(instruction, qvm.num_qubits)
         qvm.rho = np.dot(unitary, np.dot(qvm.rho, np.conj(unitary).T))
+        qvm.program_counter += 1
+
+
+def unitary_transition(qvm, instruction):
+    """
+    Transition the qvm with the instruction
+
+    instruction is a string instruction.
+    """
+    if instruction.operator_name in qvm.gate_set:
+        # get the unitary and evolve the state
+        unitary = tensor_gates(instruction, qvm.num_qubits)
+        qvm.unitary = np.dot(unitary, qvm.unitary)
         qvm.program_counter += 1
 
 
@@ -119,7 +144,7 @@ def density(pyquil_program):
 
     :params pyquil_program: (pyquil.Program) object containing only protoQuil
                             instructions.
-    :returns: a wavefunction corresponding to the output of the program.
+    :returns: a denisty matrix corresponding to the output of the program.
     """
     max_index = identify_qubits(pyquil_program)
     rho = np.zeros((2**max_index, 1))
@@ -129,3 +154,23 @@ def density(pyquil_program):
               gate_set=gate_matrix.keys(), rho=rho)
     qvm = run_rho(qvm)
     return qvm.rho
+
+
+def unitary(pyquil_program):
+    """
+    Return the unitary of a pyquil program
+
+    This method initializes a qvm with a gate_set, protoquil program (expressed
+    as a pyquil program), and then executes the QVM statemachine.
+
+    :params pyquil_program: (pyquil.Program) object containing only protoQuil
+                            instructions.
+    :returns: a unitary corresponding to the output of the program.
+    """
+    pyquil_program = clense_program(pyquil_program)
+    max_index = identify_qubits(pyquil_program)
+    unitary = np.eye(2**max_index)
+    qvm = QVM(qubits=max_index, program=pyquil_program, program_counter=0,
+              gate_set=gate_matrix.keys(), unitary=unitary)
+    qvm = run_unitary(qvm)
+    return qvm.unitary

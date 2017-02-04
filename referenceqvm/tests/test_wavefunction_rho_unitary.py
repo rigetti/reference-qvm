@@ -12,6 +12,7 @@ from pyquil.gates import RZ as RZgate
 from pyquil.gates import PHASE as PHASEgate
 import numpy as np
 from referenceqvm import qvm
+from referenceqvm.gates import gate_matrix
 
 
 def test_belltest():
@@ -182,8 +183,60 @@ def test_larger_qaoa_density():
     assert np.isclose(rho_test, rho_true).all()
 
 
+def test_qaoa_unitary():
+    wf_true = [0.00167784 + 1.00210180e-05*1j, 0.50000000 - 4.99997185e-01*1j,
+               0.50000000 - 4.99997185e-01*1j, 0.00167784 + 1.00210180e-05*1j]
+    wf_true = np.reshape(np.array(wf_true), (4, 1))
+    prog = Program()
+    prog.inst([RYgate(np.pi/2)(0), RXgate(np.pi)(0),
+               RYgate(np.pi/2)(1), RXgate(np.pi)(1),
+               CNOTgate(0, 1), RXgate(-np.pi/2)(1), RYgate(4.71572463191)(1),
+               RXgate(np.pi/2)(1), CNOTgate(0, 1),
+               RXgate(-2*2.74973750579)(0), RXgate(-2*2.74973750579)(1)])
+    test_unitary = qvm.unitary(prog)
+    wf_test = np.zeros((4, 1))
+    wf_test[0, 0] = 1.0
+    wf_test = np.dot(test_unitary, wf_test)
+    assert np.isclose(wf_test, wf_true).all()
+
+
+def test_one_qubit_unitary():
+    prog = Program()
+    prog.inst([Hgate(0)])
+    unitary = qvm.unitary(prog)
+    assert np.isclose(unitary, gate_matrix['H']).all()
+
+    prog = Program()
+    prog.inst([RYgate(0.25)(0), Igate(1)])
+    unitary = qvm.unitary(prog)
+    assert np.isclose(unitary, np.kron(np.eye(2), gate_matrix['RY'](0.25))).all()
+
+
+def test_two_qubit_unitary():
+    prog = Program()
+    prog.inst([Hgate(0), CNOTgate(1, 0)])
+    unitary = qvm.unitary(prog)
+    assert np.isclose(unitary, gate_matrix['CNOT'].dot(np.kron(np.eye(2),
+                                                       gate_matrix['H']))).all()
+
+    prog = Program()
+    ua_matrix = [[1, 0,    0, 0],
+                 [0, -1.j, 0, 0],
+                 [0, 0, -1.j, 0],
+                 [0, 0,    0, 1]
+                 ]
+    prog.defgate("UA", ua_matrix)
+    prog.inst([RYgate(0.25)(0), ("UA 0 1")])
+    unitary = qvm.unitary(prog)
+    assert np.isclose(unitary, gate_matrix['UA'].dot(np.kron(np.eye(2),
+                                                     gate_matrix['RY'](0.25)))).all()
+
+
 if __name__ == "__main__":
     test_belltest()
     test_occupation_basis()
     test_qaoa_circuit()
     test_qaoa_density()
+    test_qaoa_unitary()
+    test_one_qubit_unitary()
+    test_two_qubit_unitary()
