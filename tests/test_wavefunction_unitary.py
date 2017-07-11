@@ -17,7 +17,7 @@ from pyquil.gates import STANDARD_GATES
 from pyquil.paulis import PauliTerm, PauliSum, exponentiate
 import numpy as np
 import pytest
-from referenceqvm.api import Connection
+from referenceqvm.api import SyncConnection
 from referenceqvm.qvm import QVM, QVM_Unitary
 from referenceqvm.gates import gate_matrix
 
@@ -26,9 +26,9 @@ def test_initialize():
     """
     can we initialize a qvm object
     """
-    qvm = Connection(type_trans='wavefunction')
+    qvm = SyncConnection(type_trans='wavefunction')
     assert isinstance(qvm, QVM)
-    qvm = Connection(type_trans='unitary')
+    qvm = SyncConnection(type_trans='unitary')
     assert isinstance(qvm, QVM_Unitary)
 
 
@@ -37,7 +37,7 @@ def test_belltest():
     Generate a bell state with fake qvm and qvm and compare
     """
     prog = Program().inst([Hgate(0), CNOTgate(0, 1)])
-    qvm = Connection(type_trans='wavefunction')
+    qvm = SyncConnection(type_trans='wavefunction')
     bellout, _ = qvm.wavefunction(prog)
     bell = np.zeros((4, 1))
     bell[0, 0] = bell[-1, 0] = 1.0 / np.sqrt(2)
@@ -48,7 +48,7 @@ def test_occupation_basis():
     prog = Program().inst([Xgate(0), Xgate(1), Igate(2), Igate(3)])
     state = np.zeros((2 ** 4, 1))
     state[3, 0] = 1.0
-    qvm = Connection(type_trans='wavefunction')
+    qvm = SyncConnection(type_trans='wavefunction')
     meanfield_state, _ = qvm.wavefunction(prog)
     assert np.allclose(meanfield_state.amplitudes, state)
 
@@ -73,7 +73,7 @@ def test_exp_circuit():
         single_exp_prog = exponentiate(term)
         prog += single_exp_prog
 
-    qvm = Connection(type_trans='wavefunction')
+    qvm = SyncConnection(type_trans='wavefunction')
     wf, _ = qvm.wavefunction(prog)
     wf = np.reshape(wf.amplitudes, (-1, 1))
     assert np.allclose(wf, true_wf)
@@ -89,7 +89,7 @@ def test_qaoa_circuit():
                CNOTgate(0, 1), RXgate(-np.pi/2)(1), RYgate(4.71572463191)(1),
                RXgate(np.pi/2)(1), CNOTgate(0, 1),
                RXgate(-2*2.74973750579)(0), RXgate(-2*2.74973750579)(1)])
-    qvm = Connection(type_trans='wavefunction')
+    qvm = SyncConnection(type_trans='wavefunction')
     wf_test, _ = qvm.wavefunction(prog)
     assert np.allclose(wf_test.amplitudes, wf_true)
 
@@ -138,7 +138,7 @@ def test_larger_qaoa_circuit():
                            Hgate(3)]
 
     prog = Program(square_qaoa_circuit)
-    qvm = Connection(type_trans='wavefunction')
+    qvm = SyncConnection(type_trans='wavefunction')
     wf_test, _ = qvm.wavefunction(prog)
 
     wf_true = np.array([8.43771693e-05-0.1233845*1j, -1.24927731e-01+0.00329533*1j,
@@ -167,7 +167,7 @@ def test_qaoa_unitary():
                RXgate(np.pi/2)(1), CNOTgate(0, 1),
                RXgate(-2*2.74973750579)(0), RXgate(-2*2.74973750579)(1)])
 
-    qvm = Connection(type_trans='unitary')
+    qvm = SyncConnection(type_trans='unitary')
     test_unitary = qvm.unitary(prog)
     wf_test = np.zeros((4, 1))
     wf_test[0, 0] = 1.0
@@ -182,7 +182,7 @@ def test_unitary_errors():
     prog = Program()
     prog.inst([Hgate(0), Hgate(1)])
     prog.measure(0, [0])
-    qvm = Connection(type_trans='unitary')
+    qvm = SyncConnection(type_trans='unitary')
     with pytest.raises(TypeError):
         qvm.unitary(prog)
 

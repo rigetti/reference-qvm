@@ -13,7 +13,7 @@ from pyquil.gates import PHASE as PHASEgate
 from pyquil.gates import _make_gate
 from pyquil.gates import STANDARD_GATES
 from pyquil.paulis import PauliTerm, PauliSum, exponentiate
-from referenceqvm.api import Connection
+from referenceqvm.api import SyncConnection
 from referenceqvm.qvm import QVM, QVM_Unitary
 from referenceqvm.gates import gate_matrix
 from grove.arbitrary_state.arbitrary_state import create_arbitrary_state
@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 
 def test_generate_arbitrary_states():
-    qvm = Connection()
+    qvm = SyncConnection()
 
     for length in tqdm(range(1, 2 ** 4 + 1)):
         v = 10 * np.random.random() * (np.random.random(length) - 0.5) \

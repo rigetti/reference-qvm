@@ -5,7 +5,7 @@ from .gates import gate_matrix
 from .qvm import QVM, QVM_Unitary
 
 
-def Connection(type_trans='wavefunction',
+def SyncConnection(type_trans='wavefunction',
                gate_set=gate_matrix):
         """
         Initialize a qvm of a particular type. The type corresponds to the

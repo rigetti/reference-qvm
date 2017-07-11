@@ -1,12 +1,12 @@
 import pytest
 import numpy as np
-import referenceqvm.api as api
+from referenceqvm.api import SyncConnection
 from pyquil.quil import Program
 from pyquil.gates import *
 
 
 def test_identify_bits():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     p = Program()
     for i in range(5):
@@ -37,7 +37,7 @@ def test_identify_bits():
 
 
 def test_empty_program():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     p = Program()
 
@@ -50,7 +50,7 @@ def test_empty_program():
 
 
 def test_qubit_limit():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     p = Program()
     for i in range(24):

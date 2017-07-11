@@ -53,8 +53,6 @@ from pyquil.wavefunction import Wavefunction
 
 class QAM(object):
     """
-    The Quantum Abstract Machine
-
     Subclass to make other QVMs.
     """
     def __init__(self, qubits=None, program=None, program_counter=None,
@@ -240,12 +238,10 @@ class QVM(QAM):
         :param qubit_index: is the qubit that I am measuring
         :returns: measurement_value, `unitary` for measurement, resulting wavefunct
         """
-        # number of qubits nq
-        nq = self.num_qubits
-
         # lift projective measurement operator to Hilbert space
         # prob(0) = <psi P0 | P0 psi> = psi* . P0* . P0 . psi
-        measure_0 = lifted_gate(qubit_index, utility_gates['P0'], nq)
+        measure_0 = lifted_gate(qubit_index, utility_gates['P0'], \
+                                self.num_qubits)
         if type(psi) is type(None):
             proj_psi = measure_0.dot(self.wf)
         else:
@@ -256,11 +252,14 @@ class QVM(QAM):
         # generate random number to 'roll' for measurement
         if np.random.random() < prob_zero:  
             # decohere state using the measure_0 operator
-            unitary = measure_0.dot(sps.eye(2 ** nq) / np.sqrt(prob_zero))
+            unitary = measure_0.dot(sps.eye(2 ** self.num_qubits) / \
+                                    np.sqrt(prob_zero))
             measured_val = 0
         else:  # measure one
-            measure_1 = lifted_gate(qubit_index, utility_gates['P1'], nq)
-            unitary = measure_1.dot(sps.eye(2 ** nq) / np.sqrt(1 - prob_zero))
+            measure_1 = lifted_gate(qubit_index, utility_gates['P1'], \
+                                    self.num_qubits)
+            unitary = measure_1.dot(sps.eye(2 ** self.num_qubits) / \
+                                    np.sqrt(1 - prob_zero))
             measured_val = 1
 
         return measured_val, unitary

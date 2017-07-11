@@ -1,12 +1,12 @@
 import pytest
 import numpy as np
-import referenceqvm.api as api
+from referenceqvm.api import SyncConnection
 from pyquil.quil import Program
 from pyquil.gates import *
 
 
 def test_if_then():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     main = Program().inst(X(0))
     branch_a = Program().inst(X(0))
@@ -25,7 +25,7 @@ def test_if_then():
 
 
 def test_while():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     # Name our classical registers:
     classical_flag_register = 2
@@ -42,7 +42,7 @@ def test_while():
 
 
 def test_halt():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     prog = Program(X(0))
     prog.inst(HALT)
@@ -57,7 +57,7 @@ def test_halt():
 
 
 def test_errors():
-    qvm = api.Connection()
+    qvm = SyncConnection()
 
     # NOP unsupported
     prog = Program(NOP)
