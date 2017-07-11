@@ -26,7 +26,7 @@ TODO - assume fully-connected topology; implement direct SWAP
 """
 import numpy as np
 import scipy.sparse as sps
-from gates import gate_matrix, utility_gates
+from .gates import gate_matrix, utility_gates
 from pyquil.paulis import PauliSum
 from pyquil.quilbase import *
 

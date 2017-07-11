@@ -1,8 +1,8 @@
 """
 Sets up the appropriate QVM, and interfacing.
 """
-from gates import gate_matrix
-from qvm import QVM, QVM_Unitary
+from .gates import gate_matrix
+from .qvm import QVM, QVM_Unitary
 
 
 def Connection(type_trans='wavefunction',
@@ -13,7 +13,7 @@ def Connection(type_trans='wavefunction',
 
         Currently available transitions:
             wavefunction
-            (unitary) support to be implemented
+            unitary
             (density) support to be implemented
     
         'Wavefunction' is set by default. No noise/t1/t2 params are supported

@@ -43,8 +43,8 @@ TODO - implement random number seeding, so if you run the same program you
 import numpy as np
 import scipy.sparse as sps
 
-from unitary_generator import lifted_gate, tensor_gates, value_get
-from gates import gate_matrix, utility_gates
+from .unitary_generator import lifted_gate, tensor_gates, value_get
+from .gates import gate_matrix, utility_gates
 
 from pyquil.quil import Program
 from pyquil.quilbase import *
@@ -73,17 +73,14 @@ class QAM(object):
         """
         Loads a pyQuil program into the QAM memory.
 
-        In general, a pyQuil Program() contains the following objects:
-            :<list DefGate> defined_gates: list of DefGate directives
+        Synthesizes pyQuil program into instruction list.
+        Initializes program object and program counter.
 
-        The QAM program datastructure is a list of Actions. Each action is one
-        of the following types:
+        :param pyquil_program: (pyQuil program data object) program to be ran
 
-        The program data object is a list of Gate objects. Each Gate object has a
-        'qubit_type', 'gate', 'gate_time', 'code_block' as a field.
-
-        :returns: a list of dictionaries
+        :void return:
         """
+        # typecheck
         if not isinstance(pyquil_program, Program):
             raise TypeError("I can only generate from pyQuil programs")
         if len(pyquil_program.actions) == 0:
@@ -124,26 +121,13 @@ class QAM(object):
         self.program = p
         self.program_counter = 0
 
-        # DEBUG
-        # print("Total program size: {}".format(len(self.program)))
-
         # setup quantum and classical memory
         q_max, c_max = self.identify_bits()
         if c_max < 512:
-            # floor for number of cbits = 64!
+            # floor for number of cbits = 512!
             c_max = 512
         self.num_qubits = q_max
         self.classical_memory = np.zeros(c_max).astype(bool)
-
-        # DEBUG
-        # print "Qmax, Cmax: {}, {}".format(q_max, c_max)
-
-        # DEBUG
-        # print "Ending results after completion of load_program"
-        # print self.program
-        # print self.program_counter
-        # print self.num_qubits
-        # print self.classical_memory
 
     def identify_bits(self):
         """
@@ -228,6 +212,10 @@ class QVM(QAM):
     Q U A N T U M
     V I R T U A L
     M A C H I N E
+
+    Supports run(), run_and_measure(), and wavefunction() methods.
+
+    Subclass QAM to QVM_Unitary to obtain unitaries from pyQuil program.
     """
     def __init__(self, qubits=None, program=None, program_counter=None,
                  classical_memory=None, gate_set=None, defgate_set=None):
@@ -392,10 +380,11 @@ class QVM(QAM):
             # do nothing; set program_counter to end of program
             self.program_counter = len(self.program)    
         else:
-            raise TypeError("Invalid / unsupported instruction type! "
+            raise TypeError("Invalid / unsupported instruction type: {}\n"
                             "Currently supported: unary/binary classical "
                             "instructions, control flow (if/while/jumps), "
-                            "measurements, and gates/defgates.")
+                            "measurements, and gates/defgates."\
+                            .format(type(instruction)))
 
     def transition(self, instruction):
         self.pre()

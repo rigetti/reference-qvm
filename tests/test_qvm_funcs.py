@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import api
+import referenceqvm.api as api
 from pyquil.quil import Program
 from pyquil.gates import *
 

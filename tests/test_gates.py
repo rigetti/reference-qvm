@@ -1,7 +1,7 @@
 """
 Test Gate outputs
 """
-from gates import gate_matrix
+from referenceqvm.gates import gate_matrix
 import numpy as np
 from scipy.linalg import expm
 import cmath

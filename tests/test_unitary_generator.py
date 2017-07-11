@@ -1,8 +1,9 @@
 import pytest
 import numpy as np
-from unitary_generator import lifted_gate, swap_inds_helper, two_swap_helper, \
-                              permutation_arbitrary, apply_gate, tensor_gates
-from gates import gate_matrix, utility_gates
+from referenceqvm.unitary_generator import lifted_gate, swap_inds_helper, \
+                              two_swap_helper, permutation_arbitrary, \
+                              apply_gate, tensor_gates
+from referenceqvm.gates import gate_matrix, utility_gates
 from pyquil.quil import Program
 from pyquil.gates import H as Hgate
 from pyquil.gates import RX as RXgate

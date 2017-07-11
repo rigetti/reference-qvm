@@ -17,9 +17,9 @@ from pyquil.gates import STANDARD_GATES
 from pyquil.paulis import PauliTerm, PauliSum, exponentiate
 import numpy as np
 import pytest
-from api import Connection
-from qvm import QVM, QVM_Unitary
-from gates import gate_matrix
+from referenceqvm.api import Connection
+from referenceqvm.qvm import QVM, QVM_Unitary
+from referenceqvm.gates import gate_matrix
 
 
 def test_initialize():
