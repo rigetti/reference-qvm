@@ -15,7 +15,7 @@
 #    limitations under the License.
 ##############################################################################
 """
-An pure implementation of a QAM that executes nearly all of Quil, via program
+An pure implementation of a QVM that executes nearly all of Quil, via program
 objects created in pyQuil and then submitted to the QVM.
 
 The goal of this reference-QVM is to produce an accurate QAM according to the
@@ -37,8 +37,7 @@ excepting the following unsupported Quil instructions:
 
 See documentation for further details, e.g. DEFCIRCUIT, WAIT not supported.
 
-TODO - implement random number seeding, so if you run the same program you
-       always get the same result
+TODO - implement random number seeding option
 """
 import numpy as np
 import scipy.sparse as sps
@@ -58,7 +57,17 @@ class QAM(object):
     def __init__(self, qubits=None, program=None, program_counter=None,
                  classical_memory=None, gate_set=None, defgate_set=None):
         """
-        STATE MACHINE MODEL OF THE QVM
+        STATE MACHINE MODEL OF THE QVM:
+            classical memory and quantum memory (qubits)
+            program array, and counter pointing to instruction to be executed
+            valid gate set & defined gate set
+
+        :param qubits: (int) number of qubits
+        :param program: (list) synthesized pyQuil program list
+        :param program_counter: (int) index into program list
+        :param classical_memory: (list) list of classical bits
+        :param gate_set: (dict) dictionary of (gate_name, array) pairs
+        :param defgate_set: (dict) dictionary of (defgate_name, array) pairs
         """
         self.num_qubits = qubits
         self.classical_memory = classical_memory
@@ -75,8 +84,6 @@ class QAM(object):
         Initializes program object and program counter.
 
         :param pyquil_program: (pyQuil program data object) program to be ran
-
-        :void return:
         """
         # typecheck
         if not isinstance(pyquil_program, Program):
@@ -131,6 +138,10 @@ class QAM(object):
         """
         Iterates through QAM program and finds number of qubits and cbits 
         needed to run program.
+
+        :return: number of qubits, number of classical bits used by 
+                 program
+        :rtype: tuple
         """
         q_max, c_max = (-1, -1)
         for index, inst in enumerate(self.program):
@@ -164,6 +175,9 @@ class QAM(object):
     def current_instruction(self):
         """
         Returns what should be run by the QVM next.
+
+        :return: next instruction
+        :rtype: pyQuil action
         """
         return self.program[self.program_counter]
 
@@ -234,9 +248,11 @@ class QVM(QAM):
         Provides the measurement outcome, measurement unitary, and resultant
         wavefunction after measurement.
 
+        :param qubit_index: index of qubit that I am measuring
         :param psi: wavefunction vector to be measured (and collapsed in-place)
-        :param qubit_index: is the qubit that I am measuring
-        :returns: measurement_value, `unitary` for measurement, resulting wavefunct
+
+        :return: measurement_value, `unitary` for measurement
+        :rtype: tuple (int, np.array)
         """
         # lift projective measurement operator to Hilbert space
         # prob(0) = <psi P0 | P0 psi> = psi* . P0* . P0 . psi
@@ -268,6 +284,11 @@ class QVM(QAM):
         """
         Helper function that iterates over the program and looks for a 
         JumpTarget that has a Label matching the input label.
+
+        :param label: Label object to search for in program
+
+        :return: program index where Label is found
+        :rtype: int
         """
         assert isinstance(label, Label)
         for index, action in enumerate(self.program):
@@ -285,12 +306,13 @@ class QVM(QAM):
         Assumes entire Program() is already loaded into self.program as 
         the synthesized list of Quilbase action objects.
 
-        :param QuilAction instruction: instruction to execute.
-
         Possible types of instructions:
-            gate in self.gate_set or self.defgates_set
             Measurement
+            gate in self.gate_set or self.defgates_set
+            Jump, JumpTarget, JumpConditional
+            Unary and Binary ClassicalInstruction
 
+        :param instruction: QuilAction instruction to execute.
         """
         if isinstance(instruction, Measurement):
             # perform measurement and modify wf in-place
@@ -386,6 +408,14 @@ class QVM(QAM):
                             .format(type(instruction)))
 
     def transition(self, instruction):
+        """
+        Implements a full transition, including pre/post noise hooks.
+
+        :param instruction: QuilAction instruction to be executed
+
+        :return: if program is halted TRUE, else FALSE
+        :rtype: bool int
+        """
         self.pre()
         self._transition(instruction)
         self.post()
@@ -410,8 +440,10 @@ class QVM(QAM):
         Run a pyQuil program multiple times, accumulating the values deposited
         in a list of classical addresses.
 
-        :param Program pyquil_program: A pyQuil program. :param list classical_addresses: A list of classical addresses.
-        :param int trials: Number of shots to collect.
+        :param pyquil_program: A pyQuil program.
+        :param classical_addresses: A list of classical addresses.
+        :param trials: Number of shots to collect.
+
         :return: A list of lists of bits. Each sublist corresponds to the
                  values in `classical_addresses`.
         :rtype: list
@@ -429,9 +461,10 @@ class QVM(QAM):
         Run a pyQuil program once to determine the final wavefunction, and
         measure multiple times.
         
-        :param Program pyquil_program: A pyQuil program.
-        :param list qubits: A list of qubits to be measured after each trial.
-        :param int trials: Number of shots to collect.
+        :param pyquil_program: A pyQuil program.
+        :param qubits: A list of qubits to be measured after each trial.
+        :param trials: Number of shots to collect.
+
         :return: A list of a list of bits.
         :rtype: list
         """
@@ -460,9 +493,10 @@ class QVM(QAM):
         """
         Simulate a pyQuil program and get the wavefunction back.
         
-        :param Program quil_program: A pyQuil program.
-        :param list classical_addresses: An optional list of classical
+        :param pyquil_program: A pyQuil program.
+        :param classical_addresses: An optional list of classical
                  addresses.
+
         :return: A tuple whose first element is a Wavefunction object,
                  and whose second element is the list of classical bits
                  corresponding to the classical addresses.
@@ -515,6 +549,8 @@ class QVM_Unitary(QAM):
     def transition(self, instruction):
         """
         Implements a transition on the unitary-qvm.
+
+        :param instruction: QuilAction gate to be implemented
         """
         if instruction.operator_name in self.gate_set or \
             instruction.operator_name in self.defgate_set:
@@ -536,7 +572,9 @@ class QVM_Unitary(QAM):
 
         :param pyquil_program: (pyquil.Program) object containing only protoQuil
                                 instructions.
-        :returns: a unitary corresponding to the output of the program.
+
+        :return: a unitary corresponding to the output of the program.
+        :rtype: np.array
         """
 
         # load program
@@ -552,13 +590,17 @@ class QVM_Unitary(QAM):
 
     def expectation(self, pyquil_program, operator_programs=[Program()]):
         """
-        Calculate the expectation value given a state prepared
+        Calculate the expectation value given a state prepared.
+
+        Currently unimplemented.
 
         :param pyquil_program: (pyquil.Program) object containing only protoQuil
                                instructions.
         :param operator_programs: (optional, list) of PauliTerms. Default is
-                                  Identiy operator.
-        :returns: (float) expectation value of the operators.
+                                  Identity operator.
+
+        :return: expectation value of the operators.
+        :rtype: float
         """
         # TODO
         pass
