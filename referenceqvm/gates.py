@@ -85,6 +85,18 @@ def PSWAP(phi):
                      [0, np.exp(1j*phi), 0, 0],
                      [0, 0, 0, 1]])
 
+"""
+Specialized useful gates; not officially in standard gate set
+"""
+
+def BARENCO(alpha, phi, theta):
+    lower_unitary = np.array([
+              [np.exp(1j * phi) * np.cos(theta), \
+                 -1j * np.exp(1j * (alpha - phi)) * np.sin(theta)],
+              [-1j * np.exp(1j * (alpha + phi)) * np.sin(theta), \
+                 np.exp(1j * alpha) * np.cos(theta)]])
+    return np.diag(np.eye(2), lower_unitary)
+
 gate_matrix = {'I': I,
                'X': X,
                'Y': Y,
@@ -105,10 +117,13 @@ gate_matrix = {'I': I,
                'SWAP': SWAP,
                'CSWAP': CSWAP,
                'ISWAP': ISWAP,
-               'PSWAP': PSWAP
+               'PSWAP': PSWAP,
+               'BARENCO': BARENCO
               }
 
-# Utility gates
+"""
+Utility gates for internal QVM use
+"""
 
 P0 = np.array([[1, 0], [0, 0]])
 

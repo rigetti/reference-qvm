@@ -42,180 +42,30 @@ TODO - implement random number seeding option
 import numpy as np
 import scipy.sparse as sps
 
-from .unitary_generator import lifted_gate, tensor_gates, value_get
-from .gates import gate_matrix, utility_gates
-
 from pyquil.quil import Program
-from pyquil.quilbase import *
+from pyquil.quilbase import (Instr,
+                             Measurement,
+                             UnaryClassicalInstruction,
+                             BinaryClassicalInstruction,
+                             ClassicalTrue,
+                             ClassicalFalse,
+                             ClassicalOr,
+                             ClassicalNot,
+                             ClassicalAnd,
+                             ClassicalExchange,
+                             ClassicalMove,
+                             Label,
+                             Jump,
+                             JumpTarget,
+                             JumpConditional,
+                             JumpWhen,
+                             JumpUnless,
+                             Halt)
 from pyquil.wavefunction import Wavefunction
 
-
-class QAM(object):
-    """
-    Subclass to make other QVMs.
-    """
-    def __init__(self, qubits=None, program=None, program_counter=None,
-                 classical_memory=None, gate_set=None, defgate_set=None):
-        """
-        STATE MACHINE MODEL OF THE QVM:
-            classical memory and quantum memory (qubits)
-            program array, and counter pointing to instruction to be executed
-            valid gate set & defined gate set
-
-        :param qubits: (int) number of qubits
-        :param program: (list) synthesized pyQuil program list
-        :param program_counter: (int) index into program list
-        :param classical_memory: (list) list of classical bits
-        :param gate_set: (dict) dictionary of (gate_name, array) pairs
-        :param defgate_set: (dict) dictionary of (defgate_name, array) pairs
-        """
-        self.num_qubits = qubits
-        self.classical_memory = classical_memory
-        self.program = program
-        self.program_counter = program_counter
-        self.gate_set = gate_set
-        self.defgate_set = defgate_set
-
-    def load_program(self, pyquil_program):
-        """
-        Loads a pyQuil program into the QAM memory.
-
-        Synthesizes pyQuil program into instruction list.
-        Initializes program object and program counter.
-
-        :param pyquil_program: (pyQuil program data object) program to be ran
-        """
-        # typecheck
-        if not isinstance(pyquil_program, Program):
-            raise TypeError("I can only generate from pyQuil programs")
-        if len(pyquil_program.actions) == 0:
-            raise TypeError("Invalid program - zero actions.")
-
-        if isinstance(self, QVM):
-            # if QVM, allow all instruction functionality
-            self.all_inst = True
-        elif isinstance(self, QVM_Unitary):
-            # if QVM_Unitary, only allowed to have Gates and DefGates.
-            self.all_inst = False
-
-        # synthesize program into instruction list
-        p = pyquil_program.synthesize()
-
-        # create defgate dictionary
-        defined_gates = {}
-        for dg in pyquil_program.defined_gates:
-            defined_gates[dg.name] = dg.matrix
-        self.defgate_set = defined_gates
-
-        # if QVM_Unitary, check if all instructions are valid.
-        invalid = False
-        for index, action in enumerate(p):
-            if isinstance(action, Instr):
-                if not action.operator_name in self.gate_set.keys()\
-                    and not action.operator_name in self.defgate_set.keys():
-                    invalid = True
-                    break
-            else:
-                invalid = True
-                break
-        if invalid == True and self.all_inst == False:
-            raise TypeError("In QVM_Unitary, only Gates and DefGates are "
-                            "supported")
-
-        # set internal program and counter to their appropriate values
-        self.program = p
-        self.program_counter = 0
-
-        # setup quantum and classical memory
-        q_max, c_max = self.identify_bits()
-        if c_max < 512:
-            # floor for number of cbits = 512!
-            c_max = 512
-        self.num_qubits = q_max
-        self.classical_memory = np.zeros(c_max).astype(bool)
-
-    def identify_bits(self):
-        """
-        Iterates through QAM program and finds number of qubits and cbits 
-        needed to run program.
-
-        :return: number of qubits, number of classical bits used by 
-                 program
-        :rtype: tuple
-        """
-        q_max, c_max = (-1, -1)
-        for index, inst in enumerate(self.program):
-            if isinstance(inst, Measurement):
-                # instruction is measurement, acts on qbits and cbits
-                if value_get(inst.arguments[0]) > q_max:
-                    q_max = value_get(inst.arguments[0])
-                elif value_get(inst.arguments[1]) > c_max:
-                    c_max = value_get(inst.arguments[1])
-            elif isinstance(inst, UnaryClassicalInstruction):
-                # instruction acts on cbits
-                if value_get(inst.target) > c_max:
-                    c_max = value_get(inst.target)
-            elif isinstance(inst, BinaryClassicalInstruction):
-                # instruction acts on cbits
-                if value_get(inst.left) > c_max:
-                    c_max = value_get(inst.left)
-                elif value_get(inst.right) > c_max:
-                    c_max = value_get(inst.right)
-            elif isinstance(inst, Instr):
-                # instruction is Gate or DefGate, acts on qbits
-                if max(map(lambda x: value_get(x), inst.arguments)) > q_max:
-                    q_max = max(map(lambda x: value_get(x), inst.arguments))
-        q_limit = 23
-        if q_max >= q_limit:
-            # hardcoded qubit maximum (so you don't kill the QVM)
-            raise RuntimeError("Too many qubits. Maximum qubit number "
-                               "supported: {}".format(q_limit + 1))
-        return (q_max + 1, c_max + 1)
-
-    def current_instruction(self):
-        """
-        Returns what should be run by the QVM next.
-
-        :return: next instruction
-        :rtype: pyQuil action
-        """
-        return self.program[self.program_counter]
-
-    def kernel(self):
-        """
-        Run the QVM!
-
-        While program_counter is less than the program length, evaluate the
-        current instruction pointed to by program_counter.
-
-        transition(instruction) increments program_counter and returns
-        whether the next instruction is HALT. If so, then break.
-        """
-        while self.program_counter < len(self.program):
-            halted = self.transition(self.current_instruction())
-            if halted:
-                break
-
-    def transition(self):
-        """
-        Abstract class for the transition type
-        """
-        raise NotImplementedError("transition is an abstract class of QAM. "
-                                  "Implement in subclass")
-
-    def wavefunction(self):
-        """
-        Abstract class for the transition type
-        """
-        raise NotImplementedError("wavefunction is an abstract class of QAM. "
-                                  "Implement in subclass")
-
-    def unitary(self):
-        """
-        Abstract class for the transition type
-        """
-        raise NotImplementedError("unitary is an abstract class of QAM. "
-                                  "Implement in subclass")
+from .unitary_generator import lifted_gate, tensor_gates, value_get
+from .gates import gate_matrix, utility_gates
+from .qam import QAM
 
 
 class QVM(QAM):
@@ -238,7 +88,8 @@ class QVM(QAM):
                                   program_counter=program_counter,
                                   classical_memory=classical_memory,
                                   gate_set=gate_set, defgate_set=defgate_set)
-        self.wf = None
+        self.wf = None  # no wavefunction upon init
+        self.all_inst = True  # allow all instructions
 
     def measurement(self, qubit_index, psi=None):
         """
@@ -248,11 +99,11 @@ class QVM(QAM):
         Provides the measurement outcome, measurement unitary, and resultant
         wavefunction after measurement.
 
-        :param qubit_index: index of qubit that I am measuring
-        :param psi: wavefunction vector to be measured (and collapsed in-place)
+        :param int qubit_index: index of qubit that I am measuring
+        :param np.array psi: wavefunction vector to be measured (and collapsed in-place)
 
         :return: measurement_value, `unitary` for measurement
-        :rtype: tuple (int, np.array)
+        :rtype: tuple (int, sparse_array)
         """
         # lift projective measurement operator to Hilbert space
         # prob(0) = <psi P0 | P0 psi> = psi* . P0* . P0 . psi
@@ -285,7 +136,7 @@ class QVM(QAM):
         Helper function that iterates over the program and looks for a 
         JumpTarget that has a Label matching the input label.
 
-        :param label: Label object to search for in program
+        :param Label label: Label object to search for in program
 
         :return: program index where Label is found
         :rtype: int
@@ -296,7 +147,7 @@ class QVM(QAM):
                 if label == action.label:
                     return index
 
-        # if we reach this point, Label was not found in program.
+        # Label was not found in program.
         raise RuntimeError("Improper program - Jump Target not found in the "
                            "input program!")
 
@@ -312,7 +163,9 @@ class QVM(QAM):
             Jump, JumpTarget, JumpConditional
             Unary and Binary ClassicalInstruction
 
-        :param instruction: QuilAction instruction to execute.
+        :param action-like instruction: {Measurement, Instr, Jump, JumpTarget,
+            JumpTarget, JumpConditional, UnaryClassicalInstruction, 
+            BinaryClassicalInstruction, Halt} instruction to execute.
         """
         if isinstance(instruction, Measurement):
             # perform measurement and modify wf in-place
@@ -411,7 +264,7 @@ class QVM(QAM):
         """
         Implements a full transition, including pre/post noise hooks.
 
-        :param instruction: QuilAction instruction to be executed
+        :param QuilAction instruction: instruction to be executed
 
         :return: if program is halted TRUE, else FALSE
         :rtype: bool int
@@ -440,9 +293,9 @@ class QVM(QAM):
         Run a pyQuil program multiple times, accumulating the values deposited
         in a list of classical addresses.
 
-        :param pyquil_program: A pyQuil program.
-        :param classical_addresses: A list of classical addresses.
-        :param trials: Number of shots to collect.
+        :param Program pyquil_program: A pyQuil program.
+        :param list classical_addresses: A list of classical addresses.
+        :param int trials: Number of shots to collect.
 
         :return: A list of lists of bits. Each sublist corresponds to the
                  values in `classical_addresses`.
@@ -460,16 +313,20 @@ class QVM(QAM):
         """
         Run a pyQuil program once to determine the final wavefunction, and
         measure multiple times.
+
+        If unused qubits are measured, they will always return zero.
         
-        :param pyquil_program: A pyQuil program.
-        :param qubits: A list of qubits to be measured after each trial.
-        :param trials: Number of shots to collect.
+        :param Program pyquil_program: A pyQuil program.
+        :param list qubits: A list of qubits to be measured after each trial.
+        :param int trials: Number of shots to collect.
 
         :return: A list of a list of bits.
         :rtype: list
         """
         if type(qubits) is type(None):
             qubits = []
+        elif type(qubits) is not list:
+            raise TypeError("Must pass in qubit indices as list")
 
         results = []
         for trial in range(trials):
@@ -493,8 +350,8 @@ class QVM(QAM):
         """
         Simulate a pyQuil program and get the wavefunction back.
         
-        :param pyquil_program: A pyQuil program.
-        :param classical_addresses: An optional list of classical
+        :param Program pyquil_program: A pyQuil program.
+        :param list classical_addresses: An optional list of classical
                  addresses.
 
         :return: A tuple whose first element is a Wavefunction object,
@@ -502,16 +359,22 @@ class QVM(QAM):
                  corresponding to the classical addresses.
         :rtype: tuple
         """
+        # load program
+        self.load_program(pyquil_program)
+
+        # check valid classical memory access
         if type(classical_addresses) is not type(None):
             # check that no classical addresses are repeated
             assert len(set(classical_addresses)) == len(classical_addresses)
+            # check that all classical addresses are valid
+            if np.min(classical_addresses) < 0 or \
+               np.max(classical_addresses) >= len(self.classical_memory):
+                raise RuntimeError("Improper classical memory access outside "
+                                   "allocated classical memory range.")
             # set classical bitmask
             mask = np.array(classical_addresses)
         else:
             mask = None
-
-        # load program
-        self.load_program(pyquil_program)
 
         # setup wavefunction
         self.wf = np.zeros((2 ** self.num_qubits, 1)).astype(np.complex128)
@@ -521,101 +384,3 @@ class QVM(QAM):
         self.kernel()
 
         return Wavefunction(self.wf), list(self.classical_memory[mask])
-
-
-class QVM_Unitary(QAM):
-    """
-    A Python QVM (Quantum Virtual Machine).
-    
-    Only pyQuil programs containing pure Gates or DefGate objects are accepted.
-    The QVM_Unitary kernel applies all the gates, and returns the unitary
-    corresponding to the input program.
-
-    Note: no classical control flow, measurements allowed.
-    """
-    def __init__(self, qubits=None, program=None, program_counter=None,
-                 classical_memory=None, gate_set=None, defgate_set=None,
-                 unitary=None):
-        """
-        Subclassed from QAM this is a pure QVM.
-        """
-        super(QVM_Unitary, self).__init__(qubits=qubits, program=program,
-                                          program_counter=program_counter,
-                                          classical_memory=classical_memory,
-                                          gate_set=gate_set,
-                                          defgate_set=defgate_set)
-        self.umat = unitary
-
-    def transition(self, instruction):
-        """
-        Implements a transition on the unitary-qvm.
-
-        :param instruction: QuilAction gate to be implemented
-        """
-        if instruction.operator_name in self.gate_set or \
-            instruction.operator_name in self.defgate_set:
-            # get the unitary and evolve the state
-            unitary = tensor_gates(self.gate_set, self.defgate_set, \
-                                   instruction, self.num_qubits)
-            self.umat = unitary.dot(self.umat)
-            self.program_counter += 1
-        else:
-            raise TypeError("Gate {} is not in the "
-                            "gate set".format(instruction.operator_name))
-
-    def unitary(self, pyquil_program):
-        """
-        Return the unitary of a pyquil program
-
-        This method initializes a qvm with a gate_set, protoquil program (expressed
-        as a pyquil program), and then executes the QVM statemachine.
-
-        :param pyquil_program: (pyquil.Program) object containing only protoQuil
-                                instructions.
-
-        :return: a unitary corresponding to the output of the program.
-        :rtype: np.array
-        """
-
-        # load program
-        self.load_program(pyquil_program)
-        
-        # setup unitary
-        self.umat = np.eye(2 ** self.num_qubits)
-
-        # evolve unitary
-        self.kernel()
-
-        return self.umat
-
-    def expectation(self, pyquil_program, operator_programs=[Program()]):
-        """
-        Calculate the expectation value given a state prepared.
-
-        Currently unimplemented.
-
-        :param pyquil_program: (pyquil.Program) object containing only protoQuil
-                               instructions.
-        :param operator_programs: (optional, list) of PauliTerms. Default is
-                                  Identity operator.
-
-        :return: expectation value of the operators.
-        :rtype: float
-        """
-        # TODO
-        pass
-        # num_qubits, num_cbits = self.identify_bits(pyquil_program)
-        # self.num_qubits = num_qubits
-        # self.wf = np.zeros((2**num_qubits, 1))
-        # self.wf[0, 0] = 1.0
-        # self.program_counter = 0
-        # self.elapsed_time = 0
-        # self.program = program_gen(pyquil_program)
-        # self.kernel()
-        # rho = self.wf.dot(np.conj(self.wf).T)
-        # qvm_unitary = QVM_Unitary(gate_set=gate_matrix.keys())
-        # hamiltonian_operators = map(lambda x: np.trace(
-        #                             qvm_unitary.unitary(x, max_index=max_index).dot(rho)),
-        #                             operator_programs)
-
-        # return hamiltonian_operators

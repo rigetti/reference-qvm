@@ -30,12 +30,14 @@ from .gates import gate_matrix, utility_gates
 from pyquil.paulis import PauliSum
 from pyquil.quilbase import *
 
-# If True, only physically-implementable operations allowed!
-# i.e. local SWAPS only (topology of QPU is periodic with nearest-neighbor gate
-# operations allowed)
-#
-# For now, only local SWAPS supported. Arbitrary SWAP operations to be 
-# implemented in a later release.
+"""
+If True, only physically-implementable operations allowed!
+i.e. local SWAPS only (topology of QPU is periodic with nearest-neighbor gate
+operations allowed)
+
+For now, only local SWAPS supported. Arbitrary SWAP operations to be 
+implemented in a later release.
+"""
 topological_QPU = True
 
 
@@ -57,14 +59,15 @@ def lifted_gate(i, matrix, num_qubits):
     right (in a little-endian fashion), gates are still lifted to apply
     on qubits in increasing index (right-to-left) order.
 
-    :param i: (int) starting qubit to lift matrix from (incr. index order)
-    :param matrix: (np.ndarray np.complex128) the matrix to be lifted
-    :param num_qubits: (int) number of overall qubits present in space
+    :param int i: starting qubit to lift matrix from (incr. index order)
+    :param np.array matrix: the matrix to be lifted
+    :param int num_qubits: number of overall qubits present in space
 
-    :return: NumPy array representation of operator acting on the
+    :return: matrix representation of operator acting on the
         complete Hilbert space of all num_qubits.
+    :rtype: sparse_array
     """
-    # >>> see all input checks in parent function apply_gate()
+    # input is checked in parent function apply_gate()
     # Find gate size (number of qubits operated on)
     quot, rem = divmod(np.log2(matrix.shape[0]), 1)
     if rem > 0:
@@ -88,6 +91,10 @@ def lifted_gate(i, matrix, num_qubits):
 def swap_inds_helper(i, j, arr):
     """
     Swaps indices in array, in-place.
+
+    :param int i: index 1
+    :param int j: index 2
+    :param array-like arr: {list, np.array} array to be modified in-place
     """
     tmp = arr[i]
     arr[i] = arr[j]
@@ -110,13 +117,14 @@ def two_swap_helper(j, k, num_qubits, qubit_map):
     Done in preparation for arbitrary 2-qubit gate application on ADJACENT
     qubits.
 
-    :param j: (int) starting qubit index
-    :param k: (int) ending qubit index
-    :param num_qubits: (int) number of qubits in Hilbert space
-    :param qubit_map: (np.array int) current index mapping of qubits
+    :param int j: starting qubit index
+    :param int k: ending qubit index
+    :param int num_qubits: number of qubits in Hilbert space
+    :param np.array qubit_map: current index mapping of qubits
 
-    :return: (tuple) NumPy array for the specified permutation,
+    :return: tuple of swap matrix for the specified permutation,
              and the new qubit_map, after permutation is made
+    :rtype: tuple (np.array, np.array)
     """
     if j >= num_qubits or k >= num_qubits or j < 0 or k < 0:
         raise ValueError("Permutation SWAP index not valid")
@@ -170,15 +178,16 @@ def permutation_arbitrary(args, num_qubits):
     Done in preparation for arbitrary gate application on 
     adjacent qubits.
 
-    :param args: (tuple int) Qubit indices in the order the gate is
+    :param tuple args: (int) Qubit indices in the order the gate is
                  applied to.
-    :param num_qubits: (int) Number of qubits in system
+    :param int num_qubits: Number of qubits in system
 
-    :return: (tuple perm, qubit_arr, start_i)
+    :return:
         perm - permutation matrix providing the desired qubit reordering
         qubit_arr - new indexing of qubits presented in left to right
             decreasing index order. Should be identical to passed 'args'.
         start_i - starting index to lift gate from
+    :rtype:  tuple (sparse_array, np.array, int)
     """
     # Check input
     if type(args) is tuple or type(args) is list:
@@ -263,7 +272,7 @@ def permutation_arbitrary_swap(args, num_qubits):
     """
     TODO
     """
-    pass
+    raise NotImplementedError("Topological QPU not yet implemented")
 
 
 def apply_gate(matrix, args, num_qubits):
@@ -276,11 +285,12 @@ def apply_gate(matrix, args, num_qubits):
     each other, and then lift the gate to the complete Hilbert space and 
     perform the multiplication.
 
-    :param matrix: (np.array np.complex128) matrix specification of GATE
-    :param args: (tuple int) qubit indices to operate gate on
-    :param num_qubits: (int) number of qubits overall
+    :param np.array matrix: matrix specification of GATE
+    :param tuple args: (int) qubit indices to operate gate on
+    :param int num_qubits: number of qubits overall
 
     :return: transformed gate that acts on the specified qubits
+    :rtype: np.array 
     """
     if num_qubits < 1 or type(num_qubits) is not int:
         raise ValueError("Improper number of qubits passed.")
@@ -331,6 +341,14 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
     Take a pyQuil_gate instruction (assumed in the Quil Standard Gate Set
     or in defined_gates dictionary), returns the unitary over the complete
     Hilbert space corresponding to the instruction.
+
+    :param dict gate_set: gate dictionary (name, matrix) pairs
+    :param dict defgate_set: defined gate dictionary (name, matrix) pairs
+    :param Instr pyquil_gate: Instruction object for pyQuil gate
+    :param int num_qubits: number of qubits in Hilbert space
+
+    :return: input gate lifted to full Hilbert space and applied
+    :rtype: np.array 
     """
     dict_check = None
     if pyquil_gate.operator_name in gate_set.keys():

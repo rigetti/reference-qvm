@@ -2,7 +2,8 @@
 Sets up the appropriate QVM, and interfacing.
 """
 from .gates import gate_matrix
-from .qvm import QVM, QVM_Unitary
+from .qvm import QVM
+from .qvm_unitary import QVM_Unitary
 
 
 def SyncConnection(type_trans='wavefunction',
