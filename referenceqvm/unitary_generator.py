@@ -294,7 +294,7 @@ def apply_gate(matrix, args, num_qubits):
     """
     if num_qubits < 1 or type(num_qubits) is not int:
         raise ValueError("Improper number of qubits passed.")
-    if len(matrix.shape) != 2 or matrix.shape[0] is not matrix.shape[1]:
+    if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
         raise TypeError("Gate array must be two-dimensional and "
                         "square matrix.")
     
