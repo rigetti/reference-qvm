@@ -2,12 +2,12 @@
 Sets up the appropriate QVM, and interfacing.
 """
 from .gates import gate_matrix
-from .qvm import QVM
+from .qvm_wavefunction import QVM_Wavefunction
 from .qvm_unitary import QVM_Unitary
 
 
 def SyncConnection(type_trans='wavefunction',
-               gate_set=gate_matrix):
+                   gate_set=gate_matrix):
         """
         Initialize a qvm of a particular type. The type corresponds to the
         type of transition the QVM can perform.
@@ -23,7 +23,7 @@ def SyncConnection(type_trans='wavefunction',
         """
 
         if type_trans == 'wavefunction':
-            qvm = QVM(gate_set=gate_matrix)
+            qvm = QVM_Wavefunction(gate_set=gate_matrix)
 
         elif type_trans == 'unitary':
             qvm = QVM_Unitary(gate_set=gate_matrix)

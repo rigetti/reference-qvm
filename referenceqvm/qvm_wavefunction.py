@@ -68,7 +68,7 @@ from .gates import gate_matrix, utility_gates
 from .qam import QAM
 
 
-class QVM(QAM):
+class QVM_Wavefunction(QAM):
     """
     A  P Y T H O N
     Q U A N T U M
@@ -84,7 +84,7 @@ class QVM(QAM):
         """
         Subclassed from QAM this is a pure QVM.
         """
-        super(QVM, self).__init__(qubits=qubits, program=program,
+        super(QVM_Wavefunction, self).__init__(qubits=qubits, program=program,
                                   program_counter=program_counter,
                                   classical_memory=classical_memory,
                                   gate_set=gate_set, defgate_set=defgate_set)
