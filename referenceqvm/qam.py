@@ -145,10 +145,10 @@ class QAM(object):
                     q_max = max(map(lambda x: value_get(x), inst.arguments))
         q_max += 1  # 0-indexed
         c_max += 1  # 0-indexed
-        q_limit = 24
+        q_limit = 51
         if q_max > q_limit:
             # hardcoded qubit maximum:
-            # any greater than 24, and RAM is blown up
+            # any greater than 51, and RAM is blown up
             raise RuntimeError("Too many qubits. Maximum qubit number "
                                "supported: {}".format(q_limit))
         return (q_max, c_max)
