@@ -51,8 +51,6 @@ def test_lifted_swap():
     result = np.kron(np.eye(2**0), np.kron(gate_matrix['SWAP'], np.eye(2**8)))
     assert np.allclose(test_matrix, result)
 
-    print("Lifted gate test passed.")
-
 
 def test_two_qubit_gates():
     unitary_test = apply_gate(gate_matrix['CNOT'], [1, 0], 2).toarray()
@@ -136,8 +134,6 @@ def test_two_qubit_gates():
     unitary_true = np.dot(np.conj(swapper.T), np.dot(V, swapper))
     assert np.allclose(unitary_test, unitary_true)
 
-    print("Apply gate (two-qubits) test passed.")
-
 
 def test_single_qubit_gates():
     test_unitary = apply_gate(gate_matrix['H'], 0, 4).toarray()
@@ -176,8 +172,6 @@ def test_single_qubit_gates():
     true_unitary = np.kron(np.eye(2**0), np.kron(gate_matrix['H'], np.eye(2**4)))
     assert np.allclose(test_unitary, true_unitary)
 
-    print("Apply gate (single-qubit) test passed.")
-
 
 def test_tensor_gates_single_qubit():
     prog = Program().inst([Hgate(0)])
@@ -200,8 +194,6 @@ def test_tensor_gates_single_qubit():
     true_unitary = np.kron(np.eye(2**0), np.kron(gate_matrix['RX'](0.5),  np.eye(2**4)))
     assert np.allclose(test_unitary, true_unitary)
 
-    print("Tensor gate (single-qubit) test passed.")
-
 
 def test_tensor_gates_two_qubit():
     prog = Program().inst([CNOTgate(0, 1)])
@@ -218,13 +210,3 @@ def test_tensor_gates_two_qubit():
     test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 4).toarray()
     true_unitary = apply_gate(gate_matrix['CNOT'], [1, 3], 4).toarray()
     assert np.allclose(test_unitary, true_unitary)
-
-    print("Tensor gate (two-qubit) test passed.")
-
-
-if __name__ == "__main__":
-    test_lifted_swap()
-    test_two_qubit_gates()
-    test_single_qubit_gates()
-    test_tensor_gates_single_qubit()
-    test_tensor_gates_two_qubit()

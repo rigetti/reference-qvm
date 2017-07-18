@@ -1,10 +1,5 @@
-"""
-Test Gate outputs
-"""
 from referenceqvm.gates import gate_matrix
 import numpy as np
-from scipy.linalg import expm
-import cmath
 
 def test_gate_matrix():
     I = gate_matrix['I']
@@ -21,7 +16,7 @@ def test_gate_matrix():
     S = gate_matrix['S']
     assert np.isclose(S, np.array([[1.0, 0], [0, 1j]])).all()
     T = gate_matrix['T']
-    assert np.isclose(T, np.array([[1.0, 0.0], [0.0, cmath.exp(1.0j * np.pi / 4.0)]])).all()
+    assert np.isclose(T, np.array([[1.0, 0.0], [0.0, np.exp(1.0j * np.pi / 4.0)]])).all()
 
     phi_range = np.linspace(0, 2 * np.pi, 120)
     for phi in phi_range:
@@ -47,6 +42,4 @@ def test_gate_matrix():
                                              [0, 0, 0, 0, 0, 0, 1, 0]])).all()
 
     # insert more tests here
-
-if __name__ == "__main__":
-    test_gate_matrix()
+    # TODO

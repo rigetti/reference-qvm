@@ -110,6 +110,8 @@ class QAM(object):
         if c_max < 512:  # allocate at least 512 cbits (as floor)
             c_max = 512
         self.num_qubits = q_max
+        # DEBUG
+        # print('number of qubits allocated: {}'.format(q_max))
         self.classical_memory = np.zeros(c_max).astype(bool)
 
     def identify_bits(self):

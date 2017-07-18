@@ -189,6 +189,8 @@ def permutation_arbitrary(args, num_qubits):
         start_i - starting index to lift gate from
     :rtype:  tuple (sparse_array, np.array, int)
     """
+    # DEBUG
+    # print("perm_arb: {}, {}".format(args, num_qubits))
     # Check input
     if type(args) is tuple or type(args) is list:
         if len(args) is 0:
@@ -196,7 +198,10 @@ def permutation_arbitrary(args, num_qubits):
                             "permutation")
     else:
         args = [args]
-    inds = np.array(list(args))
+    inds = np.array([value_get(x) for x in list(args)])
+    # DEBUG
+    # print(inds)
+    # print([type(x) for x in inds])
     for ind in inds:
         if ind >= num_qubits or ind < 0:
             raise ValueError("Permutation SWAP index not valid")
@@ -261,7 +266,8 @@ def permutation_arbitrary(args, num_qubits):
         right = not right
 
     # DEBUG
-    # print qubit_arr[::-1]
+    # print qubit_arr[final_map[-1]:final_map[0] + 1][::-1]
+    # print inds
 
     assert np.allclose(qubit_arr[final_map[-1]:final_map[0] + 1][::-1], inds)
 
@@ -319,6 +325,12 @@ def apply_gate(matrix, args, num_qubits):
         # assume fully-connected, arbitrary SWAPs allowed
         # TODO
         raise NotImplementedError("Arbitrary SWAPs not yet implemented")
+
+    # Transform qubit indices into ints
+    if type(args) == tuple or type(args) == list:
+        args = tuple([value_get(x) for x in args])
+    else:
+        args = value_get(args)
 
     # DEBUG
     # print start_i
@@ -385,8 +397,8 @@ def value_get(param_obj):
     """
     if isinstance(param_obj, (float, int, long)):
         return param_obj
-    elif isinstance(param_obj, DirectQubit):
-        return param_obj._index
+    elif isinstance(param_obj, AbstractQubit):
+        return param_obj.index()
     elif isinstance(param_obj, Addr):
         return param_obj.address
     elif isinstance(param_obj, Slot):

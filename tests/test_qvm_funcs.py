@@ -1,13 +1,10 @@
 import pytest
 import numpy as np
-from referenceqvm.api import SyncConnection
 from pyquil.quil import Program
 from pyquil.gates import *
 
 
-def test_identify_bits():
-    qvm = SyncConnection()
-
+def test_identify_bits(qvm):
     p = Program()
     for i in range(5):
         p.inst(X(i))
@@ -36,11 +33,8 @@ def test_identify_bits():
     assert len(qvm.classical_memory) == 512
 
 
-def test_empty_program():
-    qvm = SyncConnection()
-
+def test_empty_program(qvm):
     p = Program()
-
     with pytest.raises(TypeError):
         qvm.wavefunction(p)
     with pytest.raises(TypeError):
@@ -48,22 +42,14 @@ def test_empty_program():
     with pytest.raises(TypeError):
         qvm.run_and_measure(p)
 
+# def test_qubit_limit(qvm):
+#     p = Program()
+#     for i in range(25):
+#         p.inst(X(i))
 
-def test_qubit_limit():
-    qvm = SyncConnection()
-
-    p = Program()
-    for i in range(24):
-        p.inst(X(i))
-
-    with pytest.raises(RuntimeError):
-        qvm.wavefunction(p)
-    with pytest.raises(RuntimeError):
-        qvm.run(p)
-    with pytest.raises(RuntimeError):
-        qvm.run_and_measure(p)
-
-if __name__ == '__main__':
-    test_identify_bits()
-    test_empty_program()
-    test_qubit_limit()
+#     with pytest.raises(RuntimeError):
+#         qvm.wavefunction(p)
+#     with pytest.raises(RuntimeError):
+#         qvm.run(p)
+#     with pytest.raises(RuntimeError):
+#         qvm.run_and_measure(p)
