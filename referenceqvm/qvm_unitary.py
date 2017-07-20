@@ -114,7 +114,7 @@ class QVM_Unitary(QAM):
         :rtype: float
         """
         # TODO
-        pass
+        raise NotImplementedError()
         # num_qubits, num_cbits = self.identify_bits(pyquil_program)
         # self.num_qubits = num_qubits
         # self.wf = np.zeros((2**num_qubits, 1))

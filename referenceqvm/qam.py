@@ -107,8 +107,6 @@ class QAM(object):
         q_max, c_max = self.identify_bits()
         if c_max <= 512:  # allocate at least 512 cbits (as floor)
             c_max = 512
-        if q_max <= 0:  # allocate at least 1 qbit (as floor)
-            q_max = 1
         self.num_qubits = q_max
         # DEBUG
         # print('number of qubits allocated: {}'.format(q_max))
