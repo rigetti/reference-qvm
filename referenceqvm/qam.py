@@ -70,8 +70,6 @@ class QAM(object):
         # typecheck
         if not isinstance(pyquil_program, Program):
             raise TypeError("I can only generate from pyQuil programs")
-        if len(pyquil_program.actions) == 0:
-            raise TypeError("Invalid program - zero actions.")
 
         if self.all_inst == None:
             raise NotImplementedError("QAM needs to be subclassed in order to "
@@ -107,8 +105,10 @@ class QAM(object):
 
         # setup quantum and classical memory
         q_max, c_max = self.identify_bits()
-        if c_max < 512:  # allocate at least 512 cbits (as floor)
+        if c_max <= 512:  # allocate at least 512 cbits (as floor)
             c_max = 512
+        if q_max <= 0:  # allocate at least 1 qbit (as floor)
+            q_max = 1
         self.num_qubits = q_max
         # DEBUG
         # print('number of qubits allocated: {}'.format(q_max))
