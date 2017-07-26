@@ -33,15 +33,6 @@ def test_identify_bits(qvm):
     assert len(qvm.classical_memory) == 512
 
 
-def test_empty_program(qvm):
-    p = Program()
-    with pytest.raises(TypeError):
-        qvm.wavefunction(p)
-    with pytest.raises(TypeError):
-        qvm.run(p)
-    with pytest.raises(TypeError):
-        qvm.run_and_measure(p)
-
 # def test_qubit_limit(qvm):
 #     p = Program()
 #     for i in range(25):
