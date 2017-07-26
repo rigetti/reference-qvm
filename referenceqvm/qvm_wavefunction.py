@@ -383,4 +383,11 @@ class QVM_Wavefunction(QAM):
         # evolve wf with program, via kernel
         self.kernel()
 
-        return Wavefunction(self.wf), list(self.classical_memory[mask])
+        # convert bools (False, True) to ints (0, 1)
+        if type(mask) == type(None):
+            # return all
+            results = [int(x) for x in self.classical_memory]
+        else:
+            results = [int(x) for x in self.classical_memory[mask]]
+
+        return Wavefunction(self.wf), results

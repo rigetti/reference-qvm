@@ -7,8 +7,6 @@ from referenceqvm.gates import gate_matrix
 
 
 def test_random_gates(qvm_unitary):
-    """
-    """
     p = Program().inst([H(0), H(1), H(0)])
     test_unitary = qvm_unitary.unitary(p)
     actual_unitary = np.kron(gate_matrix['H'], np.eye(2 ** 1))
@@ -32,8 +30,6 @@ def test_random_gates(qvm_unitary):
 
 
 def test_identity(qvm_unitary):
-    """
-    """
     p = Program()
     test_unitary = qvm_unitary.unitary(p)
     assert np.allclose(test_unitary, np.eye(2 ** 0))
