@@ -147,39 +147,3 @@ def test_larger_qaoa_circuit(qvm):
 
     wf_true = np.reshape(wf_true, (2 ** 4, 1))
     assert np.allclose(wf_test.amplitudes, wf_true)
-
-
-def test_qaoa_unitary(qvm_unitary):
-    wf_true = [0.00167784 + 1.00210180e-05*1j, 0.50000000 - 4.99997185e-01*1j,
-               0.50000000 - 4.99997185e-01*1j, 0.00167784 + 1.00210180e-05*1j]
-    wf_true = np.reshape(np.array(wf_true), (4, 1))
-    prog = Program()
-    prog.inst([RYgate(np.pi/2)(0), RXgate(np.pi)(0),
-               RYgate(np.pi/2)(1), RXgate(np.pi)(1),
-               CNOTgate(0, 1), RXgate(-np.pi/2)(1), RYgate(4.71572463191)(1),
-               RXgate(np.pi/2)(1), CNOTgate(0, 1),
-               RXgate(-2*2.74973750579)(0), RXgate(-2*2.74973750579)(1)])
-
-    test_unitary = qvm_unitary.unitary(prog)
-    wf_test = np.zeros((4, 1))
-    wf_test[0, 0] = 1.0
-    wf_test = test_unitary.dot(wf_test)
-    assert np.allclose(wf_test, wf_true)
-
-
-def test_unitary_errors(qvm_unitary):
-    # do we properly throw errors when non-gates are thrown into a unitary?
-
-    # try measuring
-    prog = Program()
-    prog.inst([Hgate(0), Hgate(1)])
-    prog.measure(0, [0])
-    with pytest.raises(TypeError):
-        qvm_unitary.unitary(prog)
-
-    # try an undefined DefGate
-    prog = Program()
-    prog.defgate("hello", np.array([[0, 1], [1, 0]]))
-    prog.inst(("hello2", 0))
-    with pytest.raises(TypeError):
-        qvm_unitary.unitary(prog)
