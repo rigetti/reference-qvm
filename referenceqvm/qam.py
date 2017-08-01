@@ -108,8 +108,6 @@ class QAM(object):
         if c_max <= 512:  # allocate at least 512 cbits (as floor)
             c_max = 512
         self.num_qubits = q_max
-        # DEBUG
-        # print('number of qubits allocated: {}'.format(q_max))
         self.classical_memory = np.zeros(c_max).astype(bool)
 
     def identify_bits(self):
@@ -147,8 +145,7 @@ class QAM(object):
         c_max += 1  # 0-indexed
         q_limit = 51
         if q_max > q_limit:
-            # hardcoded qubit maximum:
-            # any greater than 51, and RAM is blown up
+            # hardcoded qubit maximum
             raise RuntimeError("Too many qubits. Maximum qubit number "
                                "supported: {}".format(q_limit))
         return (q_max, c_max)

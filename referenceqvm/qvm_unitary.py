@@ -103,7 +103,7 @@ class QVM_Unitary(QAM):
         """
         Calculate the expectation value given a state prepared.
 
-        Currently unimplemented.
+        TODO - currently unimplemented.
 
         :param pyquil_program: (pyquil.Program) object containing only protoQuil
                                instructions.
@@ -113,20 +113,4 @@ class QVM_Unitary(QAM):
         :return: expectation value of the operators.
         :rtype: float
         """
-        # TODO
-        raise NotImplementedError()
-        # num_qubits, num_cbits = self.identify_bits(pyquil_program)
-        # self.num_qubits = num_qubits
-        # self.wf = np.zeros((2**num_qubits, 1))
-        # self.wf[0, 0] = 1.0
-        # self.program_counter = 0
-        # self.elapsed_time = 0
-        # self.program = program_gen(pyquil_program)
-        # self.kernel()
-        # rho = self.wf.dot(np.conj(self.wf).T)
-        # qvm_unitary = QVM_Unitary(gate_set=gate_matrix.keys())
-        # hamiltonian_operators = map(lambda x: np.trace(
-        #                             qvm_unitary.unitary(x, max_index=max_index).dot(rho)),
-        #                             operator_programs)
-
-        # return hamiltonian_operators
+        raise NotImplementedError("Expectation not implemented yet")

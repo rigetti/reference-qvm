@@ -189,8 +189,6 @@ def permutation_arbitrary(args, num_qubits):
         start_i - starting index to lift gate from
     :rtype:  tuple (sparse_array, np.array, int)
     """
-    # DEBUG
-    # print("perm_arb: {}, {}".format(args, num_qubits))
     # Check input
     if type(args) is tuple or type(args) is list:
         if len(args) is 0:
@@ -199,9 +197,6 @@ def permutation_arbitrary(args, num_qubits):
     else:
         args = [args]
     inds = np.array([value_get(x) for x in list(args)])
-    # DEBUG
-    # print(inds)
-    # print([type(x) for x in inds])
     for ind in inds:
         if ind >= num_qubits or ind < 0:
             raise ValueError("Permutation SWAP index not valid")
@@ -223,12 +218,6 @@ def permutation_arbitrary(args, num_qubits):
     final_map = np.arange(start, start + len(inds))[::-1]
     start_i = final_map[-1]
 
-    # DEBUG
-    # print inds
-    # print final_map
-    # print sort_i 
-    # print sorted_inds
-
     # Note that the lifting operation takes a k-qubit gate operating
     # on the qubits i+k-1, i+k-2, ... i (left to right).
     # two_swap_helper can be used to build the 
@@ -238,36 +227,23 @@ def permutation_arbitrary(args, num_qubits):
     # the argument.
     qubit_arr = np.arange(num_qubits)  # current qubit indexing
 
-    # DEBUG
-    # print qubit_arr[::-1]
-
     made_it = False
     right = True
     while made_it == False:
-        # DEBUG
-        # print "iterating over indices again..."
         array = range(len(inds)) if right else range(len(inds))[::-1]
         for i in array:
             pmod, qubit_arr = two_swap_helper(np.where(qubit_arr == inds[i])[0][0], \
                                               final_map[i], num_qubits, \
                                               qubit_arr)
-            # DEBUG
-            # print qubit_arr
 
             # update permutation matrix
             perm = pmod.dot(perm)
             if np.allclose(qubit_arr[final_map[-1]:final_map[0] + 1][::-1], inds):
-                # DEBUG
-                # print "made it"
                 made_it = True
                 break
 
         # for next iteration, go in opposite direction
         right = not right
-
-    # DEBUG
-    # print qubit_arr[final_map[-1]:final_map[0] + 1][::-1]
-    # print inds
 
     assert np.allclose(qubit_arr[final_map[-1]:final_map[0] + 1][::-1], inds)
 
@@ -276,7 +252,7 @@ def permutation_arbitrary(args, num_qubits):
 
 def permutation_arbitrary_swap(args, num_qubits):
     """
-    TODO
+    TODO - Not yet implemented.
     """
     raise NotImplementedError("Topological QPU not yet implemented")
 
@@ -332,12 +308,6 @@ def apply_gate(matrix, args, num_qubits):
     else:
         args = value_get(args)
 
-    # DEBUG
-    # print start_i
-    # print args
-    # print final_map
-    # print type(gate_size)
-    # print type(start_i)
     if start_i != 0:
         assert np.allclose(final_map[- gate_size - start_i: \
                                      - start_i], np.array(args))

@@ -29,6 +29,6 @@ def SyncConnection(type_trans='wavefunction',
             qvm = QVM_Unitary(gate_set=gate_matrix)
 
         else:
-            raise TypeError("""{} is not a valid QVM type.""".format(type_trans))
+            raise TypeError("{} is not a valid QVM type.".format(type_trans))
 
         return qvm

@@ -1,9 +1,8 @@
-import numpy as np
-import cmath
-
 """
 Standard gate set, as detailed in Quil whitepaper (arXiV:1608:03355v2)
 """
+import numpy as np
+import cmath
 
 I = np.array([[1.0, 0.0], [0.0, 1.0]])
 
