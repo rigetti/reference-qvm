@@ -38,28 +38,51 @@ Dependencies
 * pytest (optional, for development testing)
 * Grove (optional, for development testing)
 
-
-Interaction with the referenceqvm
----------------------------------
-
-The qvm can be accessed in a similar way to the Forest QVM access.
-Start by importing qvm from the `referenceqvm` module
-
-```
-from referenceqvm import qvm
-```
-
-Then call the `wavefunction()` or `unitary()` method to get the wavefunction
-or unitary corresponding to the execution of the input program.
-
-
 Development and Testing
 -----------------------
 
 We use pytest for testing. Tests can be run from the top-level directory using:
 ```
-py.test
+pytest
 ```
+
+Interaction with the referenceqvm
+---------------------------------
+
+The qvm can be accessed in a similar way to the Forest QVM access.
+Start by importing the synchronous connection object from the `referenceqvm.api` module
+
+```python
+from referenceqvm.api import SyncConnection
+```
+
+and initialize a connection to the reference-qvm
+
+```python
+qvm = SyncConnection()
+```
+
+By default, the Connection object uses the wavefunction transition type.  More details on 
+transition types can be found in the documentation.
+
+Then call the `qvm.wavefunction(prog)` method to get back the classical memory and the 
+pyquil.Wavefunction object given a pyquil.quil.Program object `prog`.
+
+The reference-qvm has the same functionality as Forest QVM and is useful for testing 
+small quantum programs on a local machine.  For example, the same code (up to the 
+`referenceqvm.api` import) can be used to simulate pyquil programs.
+
+```python
+>>> import pyquil.quil as pq
+>>> import referenceqvm.api as api
+>>> from pyquil.gates import *
+>>> qvm = api.SyncConnection()
+>>> p = pq.Program(H(0), CNOT(0,1))
+<pyquil.pyquil.Program object at 0x101ebfb50>
+>>> qvm.wavefunction(p)[0]
+[(0.7071067811865475+0j), 0j, 0j, (0.7071067811865475+0j)]
+```
+
 
 ## How to cite the reference-qvm
 
@@ -74,7 +97,7 @@ bibTex:
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/rigetticomputing},
-  commit = {0}
+  commit = {the commit you used}
 }
 ```
 
