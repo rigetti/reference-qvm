@@ -1,5 +1,4 @@
-Reference QVM
--------------
+# Reference QVM
 
 The `referenceqvm` is the reference implementation of the QVM outlined in the
 arXiv:1608:03355 by Robert Smith, Spike Curtis, and Will Zeng. The purpose of
@@ -13,8 +12,7 @@ Noise models (dephasing, Kraus operators), parametrization with bits in
 classical memory, and other features will be added soon.
 
 
-Installation
-------------
+## Installation
 
 You can install reference-qvm directly from the Python package manager `pip` using:
 ```
@@ -28,8 +26,7 @@ pip install -r requirements.txt -e .
 
 This will install the reference-qvm's dependencies if you do not already have them.
 
-Dependencies
-------------
+## Dependencies
 
 * NumPy
 * SciPy
@@ -38,16 +35,25 @@ Dependencies
 * pytest (optional, for development testing)
 * Grove (optional, for development testing)
 
-Development and Testing
------------------------
+## Development and Testing
 
 We use pytest for testing. Tests can be run from the top-level directory using:
 ```
 pytest
 ```
 
-Interaction with the referenceqvm
----------------------------------
+## Building the Docs
+
+We use sphinx to build the documentation. To do this, navigate into pyQuil's top-level directory and run:
+
+```
+sphinx-build -b html ./docs/source ./docs/build
+```
+To view the docs navigate to the newly-created `docs/build` directory and open
+the `index.html` file in a browser. Note that we use the Read the Docs theme for
+our documentation, so this may need to be installed using `pip install sphinx_rtd_theme`.
+
+## Interaction with the referenceqvm
 
 The qvm can be accessed in a similar way to the Forest QVM access.
 Start by importing the synchronous connection object from the `referenceqvm.api` module
@@ -62,8 +68,7 @@ and initialize a connection to the reference-qvm
 qvm = SyncConnection()
 ```
 
-By default, the Connection object uses the wavefunction transition type.  More details on 
-transition types can be found in the documentation.
+By default, the Connection object uses the wavefunction transition type.  
 
 Then call the `qvm.wavefunction(prog)` method to get back the classical memory and the 
 pyquil.Wavefunction object given a pyquil.quil.Program object `prog`.
@@ -82,6 +87,25 @@ small quantum programs on a local machine.  For example, the same code (up to th
 >>> qvm.wavefunction(p)[0]
 [(0.7071067811865475+0j), 0j, 0j, (0.7071067811865475+0j)]
 ```
+
+SyncConnection can also initialize a QVM that does not return a wavefunction but instead a unitary corresponding
+to the pyquil program.  This can be extremely useful in terms of debugging and understanding gate physics.  For example,
+we can examine the unitary for a CNOT operator.
+
+```python
+>>> import pyquil.quil as pq
+>>> import referenceqvm.api as api
+>>> from pyquil.gates import CNOT
+>>> qvm = api.SyncConnection(type_trans='unitary')
+>>> p = pq.Program(CNOT(1, 0))
+>>> u = qvm.unitary(p)
+>>> print(u)
+[[ 1.+0.j  0.+0.j  0.+0.j  0.+0.j]
+ [ 0.+0.j  1.+0.j  0.+0.j  0.+0.j]
+ [ 0.+0.j  0.+0.j  0.+0.j  1.+0.j]
+ [ 0.+0.j  0.+0.j  1.+0.j  0.+0.j]]
+```
+
 
 
 ## How to cite the reference-qvm
