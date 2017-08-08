@@ -64,7 +64,7 @@ from pyquil.quilbase import (Instr,
 from pyquil.wavefunction import Wavefunction
 
 from .unitary_generator import lifted_gate, tensor_gates, value_get
-from .gates import gate_matrix, utility_gates
+from .gates import utility_gates
 from .qam import QAM
 
 

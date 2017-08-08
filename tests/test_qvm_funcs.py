@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 from pyquil.quil import Program
 from pyquil.gates import *
 
@@ -41,15 +40,3 @@ def test_empty_program(qvm):
         qvm.run(p)
     with pytest.raises(TypeError):
         qvm.run_and_measure(p)
-
-# def test_qubit_limit(qvm):
-#     p = Program()
-#     for i in range(25):
-#         p.inst(X(i))
-
-#     with pytest.raises(RuntimeError):
-#         qvm.wavefunction(p)
-#     with pytest.raises(RuntimeError):
-#         qvm.run(p)
-#     with pytest.raises(RuntimeError):
-#         qvm.run_and_measure(p)

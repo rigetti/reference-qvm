@@ -18,15 +18,10 @@
 Pure QVM that only executes pyQuil programs containing Gates, and returns the 
 unitary resulting from the program evolution.
 """
-import numpy as np
-import scipy.sparse as sps
-
 from pyquil.quil import Program
 from pyquil.quilbase import *
-from pyquil.wavefunction import Wavefunction
 
-from .unitary_generator import lifted_gate, tensor_gates, value_get
-from .gates import gate_matrix, utility_gates
+from .unitary_generator import tensor_gates
 from .qam import QAM
 
 
@@ -115,18 +110,3 @@ class QVM_Unitary(QAM):
         """
         # TODO
         raise NotImplementedError()
-        # num_qubits, num_cbits = self.identify_bits(pyquil_program)
-        # self.num_qubits = num_qubits
-        # self.wf = np.zeros((2**num_qubits, 1))
-        # self.wf[0, 0] = 1.0
-        # self.program_counter = 0
-        # self.elapsed_time = 0
-        # self.program = program_gen(pyquil_program)
-        # self.kernel()
-        # rho = self.wf.dot(np.conj(self.wf).T)
-        # qvm_unitary = QVM_Unitary(gate_set=gate_matrix.keys())
-        # hamiltonian_operators = map(lambda x: np.trace(
-        #                             qvm_unitary.unitary(x, max_index=max_index).dot(rho)),
-        #                             operator_programs)
-
-        # return hamiltonian_operators

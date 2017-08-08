@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 from pyquil.quil import Program
 from pyquil.gates import *
 
