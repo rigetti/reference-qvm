@@ -93,3 +93,6 @@ ENV/
 
 # one_shot testing
 one_shot/
+
+# Atom build YAML file
+.atom-build.yml

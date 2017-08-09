@@ -7,7 +7,7 @@ The reference-qvm is a python implementation of the quantum-abstract-machine des
 arXiv:1608:03355 by Robert Smith, Spike Curtis, and Will Zeng.  The implementation of this quantum-virtual-machine
 is meant to be as pedagogical and extensible as possible.  The python code attempts to stay very close to the
 mathematical description of the state-machine model of the qvm described in the original paper.  The implementation
-goes as far as using the same variable names as the white-paper in a hopes that the implementation is readable and
+goes as far as using the same variable names as the white-paper in the hopes that the implementation is readable and
 easy to understand.
 
 The reference-qvm is a quantum simulator of pyquil programs.  It compliments the Forest-QVM, provided by Rigetti
@@ -18,10 +18,10 @@ simulations can be run with the Forest-QVM.
 
 The reference-qvm provides some functionality beyond the current Forest-QVM:
 
-1. Getting the unitary corresponding the a pyquil program
+1. Getting the unitary corresponding to a pyQuil program
 2. Easy customization of error models by specification of pre or post hooks in the state-machine model
 
-The following is the development roadmap for the reference-qvm
+Upcoming development roadmap for reference-qvm:
 
 1. Standard class of error models for gates and measurement: T1/T2, bit-, phase-, bit-phase-flip, depolarizing channel
 2. Stochastic evolution of the wavefunction under a noise model

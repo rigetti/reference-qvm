@@ -40,6 +40,3 @@ def test_gate_matrix():
                                              [0, 0, 0, 0, 0, 1, 0, 0],
                                              [0, 0, 0, 0, 0, 0, 0, 1],
                                              [0, 0, 0, 0, 0, 0, 1, 0]])).all()
-
-    # insert more tests here
-    # TODO

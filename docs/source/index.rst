@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    overview
+   walkthrough
    source_docs
 
 
@@ -21,4 +22,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
