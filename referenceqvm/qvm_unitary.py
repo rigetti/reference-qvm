@@ -18,15 +18,10 @@
 Pure QVM that only executes pyQuil programs containing Gates, and returns the 
 unitary resulting from the program evolution.
 """
-import numpy as np
-import scipy.sparse as sps
-
 from pyquil.quil import Program
 from pyquil.quilbase import *
-from pyquil.wavefunction import Wavefunction
 
-from .unitary_generator import lifted_gate, tensor_gates, value_get
-from .gates import gate_matrix, utility_gates
+from .unitary_generator import tensor_gates
 from .qam import QAM
 
 
@@ -103,8 +98,6 @@ class QVM_Unitary(QAM):
         """
         Calculate the expectation value given a state prepared.
 
-        TODO - currently unimplemented.
-
         :param pyquil_program: (pyquil.Program) object containing only protoQuil
                                instructions.
         :param operator_programs: (optional, list) of PauliTerms. Default is
@@ -113,4 +106,5 @@ class QVM_Unitary(QAM):
         :return: expectation value of the operators.
         :rtype: float
         """
-        raise NotImplementedError("Expectation not implemented yet")
+        # TODO
+        raise NotImplementedError()

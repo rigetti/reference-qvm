@@ -19,17 +19,14 @@ QAM superclass. Implements state machine model, program loading and processing,
 kernel - leaving details of evolution up to subclasses.
 """
 import numpy as np
-import scipy.sparse as sps
 
-from .unitary_generator import lifted_gate, tensor_gates, value_get
-from .gates import gate_matrix, utility_gates
+from .unitary_generator import value_get
 
 from pyquil.quil import Program
 from pyquil.quilbase import (Instr,
                              Measurement,
                              UnaryClassicalInstruction,
                              BinaryClassicalInstruction)
-from pyquil.wavefunction import Wavefunction
 
 
 class QAM(object):

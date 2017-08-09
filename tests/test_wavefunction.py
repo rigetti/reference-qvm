@@ -4,22 +4,17 @@ Testing the correctness of wavefunction() and unitary()
 from pyquil.quil import Program
 from pyquil.gates import H as Hgate
 from pyquil.gates import CNOT as CNOTgate
-from pyquil.gates import Y as Ygate
 from pyquil.gates import X as Xgate
-from pyquil.gates import Z as Zgate
 from pyquil.gates import I as Igate
 from pyquil.gates import RX as RXgate
 from pyquil.gates import RY as RYgate
 from pyquil.gates import RZ as RZgate
 from pyquil.gates import PHASE as PHASEgate
-from pyquil.gates import _make_gate
-from pyquil.gates import STANDARD_GATES
-from pyquil.paulis import PauliTerm, PauliSum, exponentiate
+from pyquil.paulis import PauliTerm, exponentiate
 import numpy as np
 import pytest
 from referenceqvm.qvm_wavefunction import QVM_Wavefunction
 from referenceqvm.qvm_unitary import QVM_Unitary
-from referenceqvm.gates import gate_matrix
 
 
 def test_initialize(qvm, qvm_unitary):
@@ -51,13 +46,13 @@ def test_occupation_basis(qvm):
 
 def test_exp_circuit(qvm):
     true_wf = np.array([[ 0.54030231-0.84147098j], 
-                        [ 0.00000000+0.j        ],
-                        [ 0.00000000+0.j        ],
-                        [ 0.00000000+0.j        ],
-                        [ 0.00000000+0.j        ],
-                        [ 0.00000000+0.j        ],
-                        [ 0.00000000+0.j        ],
-                        [ 0.00000000+0.j        ]])
+                        [ 0.00000000+0.j],
+                        [ 0.00000000+0.j],
+                        [ 0.00000000+0.j],
+                        [ 0.00000000+0.j],
+                        [ 0.00000000+0.j],
+                        [ 0.00000000+0.j],
+                        [ 0.00000000+0.j]])
 
     create2kill1 = PauliTerm("X", 1, -0.25)*PauliTerm("Y", 2)
     create2kill1 += PauliTerm("Y", 1, 0.25)*PauliTerm("Y", 2)
