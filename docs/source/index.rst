@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    overview
+   state_machine
    walkthrough
    source_docs
 
