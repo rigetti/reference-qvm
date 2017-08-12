@@ -57,5 +57,16 @@ Wavefunction-, Unitary-, Rho-transition types
 When specifying the qvm object the user has the option to select which type of qvm transition will be used.  By default
 the wavefunction transition is used.  This means that updates to the quantum state follow the circuit model where
 gates are elements of :math:`U(2^{n})` that operate on the wavefunction.  The unitary transition model aggregates
-the unitary represented by the gates by left matrix-multiplying each element of :math:`U(2^{n})` that is provided
-by the `next_instruction` function of the state machine.
+the unitary representing the gates by left matrix-multiplying each element of :math:`U(2^{n})` that is provided
+by the `next_instruction` function of the state machine. Having access to the unitary that corresponds to a circuit
+is very useful for debugging gates, debug programs by comparing the output against exponentiating an operator,
+or for density matrix evolution.
+
+The :math:`\rho` transition is the density matrix simulator that where the transition evolves the density matrix forward
+according to the matrix :math:`U(2^{n})`.
+
+.. math::
+
+    \rho_{t + 1} = U \rho_{t} U^{\dagger}
+
+
