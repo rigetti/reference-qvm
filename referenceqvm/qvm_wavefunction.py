@@ -303,8 +303,8 @@ class QVM_Wavefunction(QAM):
         """
         results = []
         for trial in range(trials):
-            _, classical_vals = self.wavefunction(pyquil_program, \
-                                    classical_addresses=classical_addresses)
+            _, classical_vals = self.wavefunction(pyquil_program,
+                                                  classical_addresses=classical_addresses)
             results.append(classical_vals)
 
         return results
@@ -330,8 +330,8 @@ class QVM_Wavefunction(QAM):
 
         results = []
         for trial in range(trials):
-            wf, _ = self.wavefunction(pyquil_program, \
-                                    classical_addresses=None)
+            wf, _ = self.wavefunction(pyquil_program,
+                                      classical_addresses=None)
             trial_results = []
             wf = wf.amplitudes
             for qubit_index in qubits:
@@ -363,7 +363,7 @@ class QVM_Wavefunction(QAM):
         self.load_program(pyquil_program)
 
         # check valid classical memory access
-        if type(classical_addresses) is not type(None):
+        if not isinstance(classical_addresses, type(None)):
             # check that no classical addresses are repeated
             assert len(set(classical_addresses)) == len(classical_addresses)
             # check that all classical addresses are valid
@@ -377,14 +377,14 @@ class QVM_Wavefunction(QAM):
             mask = None
 
         # setup wavefunction
-        self.wf = np.zeros((2 ** self.num_qubits, 1)).astype(np.complex128)
+        self.wf = np.zeros((2 ** self.num_qubits, 1), dtype=np.complex128)
         self.wf[0, 0] = 1.0
 
         # evolve wf with program, via kernel
         self.kernel()
 
         # convert bools (False, True) to ints (0, 1)
-        if type(mask) == type(None):
+        if isinstance(mask, type(None)):
             # return all
             results = [int(x) for x in self.classical_memory]
         else:

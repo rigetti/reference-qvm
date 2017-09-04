@@ -12,7 +12,6 @@ from pyquil.gates import RZ as RZgate
 from pyquil.gates import PHASE as PHASEgate
 from pyquil.paulis import PauliTerm, exponentiate
 import numpy as np
-import pytest
 from referenceqvm.qvm_wavefunction import QVM_Wavefunction
 from referenceqvm.qvm_unitary import QVM_Unitary
 
