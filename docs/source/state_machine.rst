@@ -19,7 +19,7 @@ With this minimal description a full simulation of the quantum abstract machine 
 computer.  The resulting program is known as the quantum-virtual-machine (QVM).  In this case the QVM is implemented in
 python with a subset of all commands specified in the original Quil paper.
 
-The QVM is a state-machine with fancy matrix-multiplication.  The state of the machine is the quantum state, classical
+The QVM is a state-machine with matrix-vector multiplication as a transition.  The state of the machine is the quantum state, classical
 memory, and a program counter.  By default the quantum state is initialized to the vector corresponding to the
 
 .. math::
@@ -55,7 +55,7 @@ Wavefunction-, Unitary-, Rho-transition types
 ---------------------------------------------
 
 When specifying the qvm object the user has the option to select which type of qvm transition will be used.  By default
-the wavefunction transition is used.  This means that updates to the quantum state follow the circuit model where
+the wavefunction transition is selected.  This means that updates to the quantum state follow the circuit model where
 gates are elements of :math:`U(2^{n})` that operate on the wavefunction.  The unitary transition model aggregates
 the unitary representing the gates by left matrix-multiplying each element of :math:`U(2^{n})` that is provided
 by the `next_instruction` function of the state machine. Having access to the unitary that corresponds to a circuit

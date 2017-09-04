@@ -71,8 +71,11 @@ from .qam import QAM
 class QVM_Wavefunction(QAM):
     """
     A  P Y T H O N
+
     Q U A N T U M
+
     V I R T U A L
+
     M A C H I N E
 
     Supports run(), run_and_measure(), and wavefunction() methods.
