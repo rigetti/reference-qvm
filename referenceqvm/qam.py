@@ -68,12 +68,12 @@ class QAM(object):
         if not isinstance(pyquil_program, Program):
             raise TypeError("I can only generate from pyQuil programs")
 
-        if self.all_inst == None:
+        if self.all_inst is None:
             raise NotImplementedError("QAM needs to be subclassed in order to "
                                       "load program")
 
         # synthesize program into instruction list
-        p = pyquil_program.synthesize()
+        synthesized_prog = pyquil_program.synthesize()
 
         # create defgate dictionary
         defined_gates = {}
@@ -83,21 +83,22 @@ class QAM(object):
 
         # if QVM_Unitary, check if all instructions are valid.
         invalid = False
-        for index, action in enumerate(p):
+        for index, action in enumerate(synthesized_prog):
             if isinstance(action, Instr):
-                if not action.operator_name in self.gate_set.keys()\
-                    and not action.operator_name in self.defgate_set.keys():
+                if (action.operator_name not in self.gate_set.keys()
+                   and action.operator_name not in self.defgate_set.keys()):
                     invalid = True
                     break
             else:
                 invalid = True
                 break
-        if invalid == True and self.all_inst == False:
+
+        if invalid is True and self.all_inst is False:
             raise TypeError("In QVM_Unitary, only Gates and DefGates are "
                             "supported")
 
         # set internal program and counter to their appropriate values
-        self.program = p
+        self.program = synthesized_prog
         self.program_counter = 0
 
         # setup quantum and classical memory
