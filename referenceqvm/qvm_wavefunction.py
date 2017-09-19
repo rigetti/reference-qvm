@@ -36,9 +36,8 @@ excepting the following unsupported Quil instructions:
 - parametrized DefGates (also unsupported by pyQuil)
 
 See documentation for further details, e.g. DEFCIRCUIT, WAIT not supported.
-
-TODO - implement random number seeding option
 """
+# TODO - implement random number seeding for deterministic experiments
 import numpy as np
 import scipy.sparse as sps
 
@@ -62,7 +61,6 @@ from pyquil.quilbase import (Instr,
                              JumpUnless,
                              Halt)
 from pyquil.wavefunction import Wavefunction
-
 from .unitary_generator import lifted_gate, tensor_gates, value_get
 from .gates import utility_gates
 from .qam import QAM
@@ -82,12 +80,13 @@ class QVM_Wavefunction(QAM):
 
     Subclass QAM to QVM_Unitary to obtain unitaries from pyQuil program.
     """
-    def __init__(self, qubits=None, program=None, program_counter=None,
+    def __init__(self, num_qubits=None, program=None, program_counter=None,
                  classical_memory=None, gate_set=None, defgate_set=None):
         """
         Subclassed from QAM this is a pure QVM.
         """
-        super(QVM_Wavefunction, self).__init__(qubits=qubits, program=program,
+        super(QVM_Wavefunction, self).__init__(num_qubits=num_qubits,
+                                  program=program,
                                   program_counter=program_counter,
                                   classical_memory=classical_memory,
                                   gate_set=gate_set, defgate_set=defgate_set)
@@ -120,7 +119,7 @@ class QVM_Wavefunction(QAM):
                            proj_psi)[0, 0]
 
         # generate random number to 'roll' for measurement
-        if np.random.random() < prob_zero:  
+        if np.random.random() < prob_zero:
             # decohere state using the measure_0 operator
             unitary = measure_0.dot(sps.eye(2 ** self.num_qubits) / \
                                     np.sqrt(prob_zero))
@@ -136,7 +135,7 @@ class QVM_Wavefunction(QAM):
 
     def find_label(self, label):
         """
-        Helper function that iterates over the program and looks for a 
+        Helper function that iterates over the program and looks for a
         JumpTarget that has a Label matching the input label.
 
         :param Label label: Label object to search for in program
@@ -157,7 +156,7 @@ class QVM_Wavefunction(QAM):
     def _transition(self, instruction):
         """
         Implements a transition on the wf-qvm.
-        Assumes entire Program() is already loaded into self.program as 
+        Assumes entire Program() is already loaded into self.program as
         the synthesized list of Quilbase action objects.
 
         Possible types of instructions:
@@ -167,7 +166,7 @@ class QVM_Wavefunction(QAM):
             Unary and Binary ClassicalInstruction
 
         :param action-like instruction: {Measurement, Instr, Jump, JumpTarget,
-            JumpTarget, JumpConditional, UnaryClassicalInstruction, 
+            JumpTarget, JumpConditional, UnaryClassicalInstruction,
             BinaryClassicalInstruction, Halt} instruction to execute.
         """
         if isinstance(instruction, Measurement):
@@ -255,7 +254,7 @@ class QVM_Wavefunction(QAM):
             self.program_counter += 1
         elif isinstance(instruction, Halt):
             # do nothing; set program_counter to end of program
-            self.program_counter = len(self.program)    
+            self.program_counter = len(self.program)
         else:
             raise TypeError("Invalid / unsupported instruction type: {}\n"
                             "Currently supported: unary/binary classical "
@@ -318,7 +317,7 @@ class QVM_Wavefunction(QAM):
         measure multiple times.
 
         If unused qubits are measured, they will always return zero.
-        
+
         :param Program pyquil_program: A pyQuil program.
         :param list qubits: A list of qubits to be measured after each trial.
         :param int trials: Number of shots to collect.
@@ -352,7 +351,7 @@ class QVM_Wavefunction(QAM):
     def wavefunction(self, pyquil_program, classical_addresses=None):
         """
         Simulate a pyQuil program and get the wavefunction back.
-        
+
         :param Program pyquil_program: A pyQuil program.
         :param list classical_addresses: An optional list of classical
                  addresses.

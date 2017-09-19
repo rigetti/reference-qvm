@@ -38,16 +38,16 @@ class QAM(object):
         program counter - index into array, pointing to next instruction
         valid gate set & defined gate set
 
-    :param int qubits: number of qubits
+    :param int num_qubits: number of qubits
     :param list program: synthesized pyQuil program list
     :param int program_counter: index into program list
     :param array-like classical_memory: {list, np.array} list of classical bits
     :param dict gate_set: dictionary of (gate_name, array) pairs
     :param dict defgate_set: dictionary of (defgate_name, array) pairs
     """
-    def __init__(self, qubits=None, program=None, program_counter=None,
+    def __init__(self, num_qubits=None, program=None, program_counter=None,
                  classical_memory=None, gate_set=None, defgate_set=None):
-        self.num_qubits = qubits
+        self.num_qubits = num_qubits
         self.classical_memory = classical_memory
         self.program = program
         self.program_counter = program_counter
@@ -110,10 +110,10 @@ class QAM(object):
 
     def identify_bits(self):
         """
-        Iterates through QAM program and finds number of qubits and cbits 
+        Iterates through QAM program and finds number of qubits and cbits
         needed to run program.
 
-        :return: number of qubits, number of classical bits used by 
+        :return: number of qubits, number of classical bits used by
                  program
         :rtype: tuple
         """
