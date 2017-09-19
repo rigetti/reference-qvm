@@ -15,7 +15,7 @@
 #    limitations under the License.
 ##############################################################################
 """
-Pure QVM that only executes pyQuil programs containing Gates, and returns the 
+Pure QVM that only executes pyQuil programs containing Gates, and returns the
 unitary resulting from the program evolution.
 """
 from pyquil.quil import Program
@@ -41,13 +41,13 @@ class QVM_Unitary(QAM):
 
     Note: no classical control flow, measurements allowed.
     """
-    def __init__(self, qubits=None, program=None, program_counter=None,
+    def __init__(self, num_qubits=None, program=None, program_counter=None,
                  classical_memory=None, gate_set=None, defgate_set=None,
                  unitary=None):
         """
         Subclassed from QAM this is a pure QVM.
         """
-        super(QVM_Unitary, self).__init__(qubits=qubits, program=program,
+        super(QVM_Unitary, self).__init__(num_qubits=num_qubits, program=program,
                                           program_counter=program_counter,
                                           classical_memory=classical_memory,
                                           gate_set=gate_set,
@@ -88,7 +88,7 @@ class QVM_Unitary(QAM):
 
         # load program
         self.load_program(pyquil_program)
-        
+
         # setup unitary
         self.umat = np.eye(2 ** self.num_qubits)
 

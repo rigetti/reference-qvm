@@ -1,4 +1,3 @@
-import pytest
 from pyquil.quil import Program
 from pyquil.gates import *
 

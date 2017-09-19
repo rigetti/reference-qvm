@@ -1,12 +1,12 @@
 Walkthrough
-========
+===============================================================================
 
 Here, we detail the operation of several
 important functions in reference-qvm, in particular the generation of
 unitaries from known matrices (stored in `gates`).
 
 Bitstring Ordering
------------------
+-------------------------------------------------------------------------------
 For :math:`n` qubits, computational basis states are typically ordered in
 literature according to the increasing basis order:
 
@@ -44,18 +44,18 @@ the :math:`k`-qubit gate with identity matrices on the adjacent single-qubit
 Hilbert spaces.
 
 Unitary Generator Functionality
------------------
+-------------------------------------------------------------------------------
 This leads us directly to a discussion of the implementation of qubit evolution
 in reference-qvm. `gates` stores the matrix representations of
 the standard gate set, including 1-qubit gates (X, Y, Z, etc.), 2-qubit gates
 (CNOT, SWAP, etc.), and several 3-qubit gates (CCNOT, CSWAP, etc.).
 
-Suppose a pyQuil program applies a k-qubit gate :math:`\hat{G}` on adjacent qubits
-:math:`[j+k-1, \cdots, j+1, j]`. If the k-qubit gate has a matrix representation
-which determines how it evolves a k-qubit Hilbert space of indices
-:math:`[k-1, \cdots, 1, 0]`, then the n-qubit matrix resulting from operating
-the k-qubit gate on the aforementioned qubits is directly formed by the
-tensor product of the k-qubit matrix with identities:
+Suppose a pyQuil program applies a k-qubit gate :math:`\hat{G}` on adjacent
+qubits :math:`[j+k-1, \cdots, j+1, j]`. If the k-qubit gate has a matrix
+representation which determines how it evolves a k-qubit Hilbert space of
+indices :math:`[k-1, \cdots, 1, 0]`, then the n-qubit matrix resulting from
+operating the k-qubit gate on the aforementioned qubits is directly formed by
+the tensor product of the k-qubit matrix with identities:
 
 .. math::
     \hat{G}_{\text{full}} =
@@ -74,7 +74,7 @@ gate, as long as the matrix defining its operation is known. It is a simple
 procedure to then `DefGate` the gate, and use it in any pyQuil program.
 
 Swapping of Hilbert spaces
------------------
+-------------------------------------------------------------------------------
 
 In the previous example, it was a simple matter to apply a :math:`k`-qubit gate
 operating on **adjacent** Hilbert spaces - just tensor everything up!
@@ -111,3 +111,4 @@ We are currently exploring methods of precompiling an input pyQuil program and
 relabeling the qubit arguments in a way that minimizes the SWAP overhead (a huge
 problem, especially in programs run on real quantum chips, which have limited
 connectivity and incur noise errors as the number of SWAP gates increase).
+

@@ -18,11 +18,8 @@
 Utility functions for generating gates for evolving states on the full Hilbert
 space for qubits.
 
-Note: uses SciPy sparse DIAgonal representation to increase space and time 
-efficiency.
-
-TODO - cache calls to lifted_gate() using DP
-TODO - assume fully-connected topology; implement direct SWAP
+Note: uses SciPy sparse diagonal (DIA) representation to increase space and
+timeefficiency.
 """
 import scipy.sparse as sps
 from .gates import gate_matrix
@@ -31,12 +28,13 @@ from pyquil.quilbase import *
 """
 If True, only physically-implementable operations allowed!
 i.e. local SWAPS only (topology of QPU is periodic with nearest-neighbor gate
-operations allowed)
+operations allowed, and a qubit architecture may be input as needed)
 
-For now, only local SWAPS supported. Arbitrary SWAP operations to be 
-implemented in a later release.
+For now, implicitly assumes a linear chain of qubit connectivity, for ease &
+guaranteed termination in swap algorithm. Arbitrary SWAP operations to be
+implemented in a future release.
 """
-topological_QPU = True
+topological_QPU = False
 
 
 def lifted_gate(i, matrix, num_qubits):
@@ -44,7 +42,7 @@ def lifted_gate(i, matrix, num_qubits):
     Lifts input k-qubit gate on adjacent qubits starting from qubit i
     to complete Hilbert space of dimension 2 ** num_qubits.
 
-    Ex: 1-qubit gate, lifts from qubit i 
+    Ex: 1-qubit gate, lifts from qubit i
     Ex: 2-qubit gate, lifts from qubits (i+1, i)
     Ex: 3-qubit gate, lifts from qubits (i+2, i+1, i), operating in that order
 
@@ -154,26 +152,26 @@ def permutation_arbitrary(args, num_qubits):
     single-particle Hilbert spaces into adjacent positions.
 
     Transposes the qubit indices in the order they are passed to a
-    contiguous region in the complete Hilbert space, in increasing 
+    contiguous region in the complete Hilbert space, in increasing
     qubit index order (preserving the order they are passed in).
 
-    Gates are usually defined as like:
-        GATE 0 1 2
-    But we need to map actual qubits 0, 1, 2 into the 2, 1, 0: since
-    the lifting operation is done directly in the little-endian
-    addressed qubit space.
+    Gates are usually defined as `GATE 0 1 2`, with such an argument ordering
+    dictating the layout of the matrix corresponding to GATE. If such an
+    instruction is given, actual qubits (0, 1, 2) need to be swapped into the
+    positions (2, 1, 0), because the lifting operation taking the 8 x 8 matrix
+    of GATE is done in the little-endian (reverse) addressed qubit space.
 
     For example, suppose I have a Quil command CCNOT 20 15 10.
-    Median is 15 - hence, we permute qubits [20, 15, 10] into
-    the final map [16, 15, 14] to minimize the number of swaps needed,
-    and so we can directly operate with the final CCNOT, when lifted
-    from indices [16, 15, 14] to the complete Hilbert space.
+    The median of the qubit indices is 15 - hence, we permute qubits
+    [20, 15, 10] into the final map [16, 15, 14] to minimize the number of
+    swaps needed, and so we can directly operate with the final CCNOT, when
+    lifted from indices [16, 15, 14] to the complete Hilbert space.
 
     Notes: assumes qubit indices are unique (assured in parent call).
 
     See documentation for further details and explanation.
 
-    Done in preparation for arbitrary gate application on 
+    Done in preparation for arbitrary gate application on
     adjacent qubits.
 
     :param tuple args: (int) Qubit indices in the order the gate is
@@ -208,17 +206,17 @@ def permutation_arbitrary(args, num_qubits):
     med_i = int(len(sort_i) / 2)
     med = sorted_inds[med_i]
 
-    # The starting position of all specified Hilbert spaces begins at 
+    # The starting position of all specified Hilbert spaces begins at
     # the qubit at (median - med_i)
     start = med - med_i
-    # Array of final indices the arguments are mapped to, from 
+    # Array of final indices the arguments are mapped to, from
     # high index to low index, left to right ordering
     final_map = np.arange(start, start + len(inds))[::-1]
     start_i = final_map[-1]
 
     # Note that the lifting operation takes a k-qubit gate operating
     # on the qubits i+k-1, i+k-2, ... i (left to right).
-    # two_swap_helper can be used to build the 
+    # two_swap_helper can be used to build the
     # permutation matrix by filling out the final map by sweeping over
     # the args from left to right and back again, swapping qubits into
     # position. we loop over the args until the final mapping matches
@@ -250,9 +248,9 @@ def permutation_arbitrary(args, num_qubits):
 
 def permutation_arbitrary_swap(args, num_qubits):
     """
-    TODO - Not yet implemented.
+    Not yet implemented.
     """
-    raise NotImplementedError("Topological QPU not yet implemented")
+    raise NotImplementedError("Arbitrary topological QPU not yet implemented")
 
 
 def apply_gate(matrix, args, num_qubits):
@@ -260,9 +258,10 @@ def apply_gate(matrix, args, num_qubits):
     Apply k-qubit gate of size (2**k, 2**k) on the qubits in the order passed
     in args. e.g. GATE(arg[0], arg[1], ... arg[k-1]).
 
-    If topological_QPU is True, we use local SWAP gates as detailed in 
-    permutation_arbitrary() to permute the gate arguments to be adjacent to 
-    each other, and then lift the gate to the complete Hilbert space and 
+    If topological_QPU is True, we use local SWAP gates only as allowed by the
+    qubit architecture --- as detailed in
+    permutation_arbitrary() --- to permute the gate arguments to be adjacent to
+    each other, and then lift the gate to the complete Hilbert space and
     perform the multiplication.
 
     :param np.array matrix: matrix specification of GATE
@@ -270,14 +269,14 @@ def apply_gate(matrix, args, num_qubits):
     :param int num_qubits: number of qubits overall
 
     :return: transformed gate that acts on the specified qubits
-    :rtype: np.array 
+    :rtype: np.array
     """
     if num_qubits < 1 or type(num_qubits) is not int:
         raise ValueError("Improper number of qubits passed.")
     if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
         raise TypeError("Gate array must be two-dimensional and "
                         "square matrix.")
-    
+
     # Find gate size (number of qubits operated on)
     quot, rem = divmod(np.log2(matrix.shape[0]), 1)
     if rem > 0:
@@ -291,13 +290,12 @@ def apply_gate(matrix, args, num_qubits):
         raise TypeError("Invalid gate size. k-qubit gates supported, for "
                         "k in [1, num_qubits]")
 
-    if topological_QPU:
+    if not topological_QPU:
         # use local SWAPs
         pi_permutation_matrix, final_map, start_i = \
                                     permutation_arbitrary(args, num_qubits)
     else:
         # assume fully-connected, arbitrary SWAPs allowed
-        # TODO
         raise NotImplementedError("Arbitrary SWAPs not yet implemented")
 
     # Transform qubit indices into ints
@@ -328,7 +326,7 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
     :param int num_qubits: number of qubits in Hilbert space
 
     :return: input gate lifted to full Hilbert space and applied
-    :rtype: np.array 
+    :rtype: np.array
     """
     dict_check = None
     if pyquil_gate.operator_name in gate_set.keys():

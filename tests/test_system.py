@@ -1,14 +1,13 @@
 from pyquil.api import SyncConnection
 from pyquil.quil import Program
 from pyquil.gates import *
-from pyquil.paulis import PauliTerm, PauliSum, exponentiate
 import numpy as np
 import pytest
-from referenceqvm.gates import gate_matrix
-from grove.qft.fourier import qft, inverse_qft
+from grove.qft.fourier import qft
 
 
-def tests_against_cloud(qvm, qvm_unitary):
+@pytest.mark.skip(reason="Must add support for Forest connections in testing")
+def tests_against_cloud(qvm):
     """
     """
     qvm_cloud = SyncConnection()
