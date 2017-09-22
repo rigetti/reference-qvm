@@ -1,9 +1,15 @@
-referenceqvm
 numpy>=1.11.1
 scipy>=0.18.1
 pyquil>=1.1.1
+funcsigs
 
 # For testing
 pytest>= 3.0.0
-quantum-grove
+git+https://github.com/rigetticomputing/grove.git
 tqdm
+tox
+pytest-cov
+codeclimate-test-reporter
+
+# docs
+sphinx_rtd_theme

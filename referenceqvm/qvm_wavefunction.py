@@ -61,9 +61,9 @@ from pyquil.quilbase import (Instr,
                              JumpUnless,
                              Halt)
 from pyquil.wavefunction import Wavefunction
-from .unitary_generator import lifted_gate, tensor_gates, value_get
-from .gates import utility_gates
-from .qam import QAM
+from referenceqvm.unitary_generator import lifted_gate, tensor_gates, value_get
+from referenceqvm.gates import utility_gates
+from referenceqvm.qam import QAM
 
 
 class QVM_Wavefunction(QAM):
@@ -86,10 +86,11 @@ class QVM_Wavefunction(QAM):
         Subclassed from QAM this is a pure QVM.
         """
         super(QVM_Wavefunction, self).__init__(num_qubits=num_qubits,
-                                  program=program,
-                                  program_counter=program_counter,
-                                  classical_memory=classical_memory,
-                                  gate_set=gate_set, defgate_set=defgate_set)
+                                               program=program,
+                                               program_counter=program_counter,
+                                               classical_memory=classical_memory,
+                                               gate_set=gate_set,
+                                               defgate_set=defgate_set)
         self.wf = None  # no wavefunction upon init
         self.all_inst = True  # allow all instructions
 
@@ -109,26 +110,21 @@ class QVM_Wavefunction(QAM):
         """
         # lift projective measurement operator to Hilbert space
         # prob(0) = <psi P0 | P0 psi> = psi* . P0* . P0 . psi
-        measure_0 = lifted_gate(qubit_index, utility_gates['P0'], \
-                                self.num_qubits)
+        measure_0 = lifted_gate(qubit_index, utility_gates['P0'], self.num_qubits)
         if type(psi) is type(None):
             proj_psi = measure_0.dot(self.wf)
         else:
             proj_psi = measure_0.dot(psi)
-        prob_zero = np.dot(np.conj(proj_psi).T,\
-                           proj_psi)[0, 0]
+        prob_zero = np.dot(np.conj(proj_psi).T, proj_psi)[0, 0]
 
         # generate random number to 'roll' for measurement
         if np.random.random() < prob_zero:
             # decohere state using the measure_0 operator
-            unitary = measure_0.dot(sps.eye(2 ** self.num_qubits) / \
-                                    np.sqrt(prob_zero))
+            unitary = measure_0.dot(sps.eye(2 ** self.num_qubits) / np.sqrt(prob_zero))
             measured_val = 0
         else:  # measure one
-            measure_1 = lifted_gate(qubit_index, utility_gates['P1'], \
-                                    self.num_qubits)
-            unitary = measure_1.dot(sps.eye(2 ** self.num_qubits) / \
-                                    np.sqrt(1 - prob_zero))
+            measure_1 = lifted_gate(qubit_index, utility_gates['P1'], self.num_qubits)
+            unitary = measure_1.dot(sps.eye(2 ** self.num_qubits) / np.sqrt(1 - prob_zero))
             measured_val = 1
 
         return measured_val, unitary
@@ -182,8 +178,7 @@ class QVM_Wavefunction(QAM):
 
         elif isinstance(instruction, Instr):
             # apply Gate or DefGate
-            unitary = tensor_gates(self.gate_set, self.defgate_set, \
-                                   instruction, self.num_qubits)
+            unitary = tensor_gates(self.gate_set, self.defgate_set, instruction, self.num_qubits)
             self.wf = unitary.dot(self.wf)
             self.program_counter += 1
 
@@ -259,8 +254,7 @@ class QVM_Wavefunction(QAM):
             raise TypeError("Invalid / unsupported instruction type: {}\n"
                             "Currently supported: unary/binary classical "
                             "instructions, control flow (if/while/jumps), "
-                            "measurements, and gates/defgates."\
-                            .format(type(instruction)))
+                            "measurements, and gates/defgates.".format(type(instruction)))
 
     def transition(self, instruction):
         """
@@ -338,8 +332,7 @@ class QVM_Wavefunction(QAM):
             wf = wf.amplitudes
             for qubit_index in qubits:
                 if qubit_index < self.num_qubits:
-                    measured_val, unitary = self.measurement(qubit_index,\
-                                                             psi=wf)
+                    measured_val, unitary = self.measurement(qubit_index, psi=wf)
                     wf = unitary.dot(wf)
                 else:
                     measured_val = 0  # unallocated qubits are zero.

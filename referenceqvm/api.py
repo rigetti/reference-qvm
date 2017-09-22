@@ -1,9 +1,9 @@
 """
 Sets up the appropriate QVM, and interfacing.
 """
-from .gates import gate_matrix
-from .qvm_wavefunction import QVM_Wavefunction
-from .qvm_unitary import QVM_Unitary
+from referenceqvm.gates import gate_matrix
+from referenceqvm.qvm_wavefunction import QVM_Wavefunction
+from referenceqvm.qvm_unitary import QVM_Unitary
 
 
 def SyncConnection(type_trans='wavefunction',

@@ -20,7 +20,7 @@ kernel - leaving details of evolution up to subclasses.
 """
 import numpy as np
 
-from .unitary_generator import value_get
+from referenceqvm.unitary_generator import value_get
 
 from pyquil.quil import Program
 from pyquil.quilbase import (Instr,
@@ -172,21 +172,21 @@ class QAM(object):
             if halted:
                 break
 
-    def transition(self):
+    def transition(self, instruction):
         """
         Abstract class for the transition type
         """
         raise NotImplementedError("transition is an abstract class of QAM. "
                                   "Implement in subclass")
 
-    def wavefunction(self):
+    def wavefunction(self, pyquil_program, classical_addresses=None):
         """
         Abstract class for the transition type
         """
         raise NotImplementedError("wavefunction is an abstract class of QAM. "
                                   "Implement in subclass")
 
-    def unitary(self):
+    def unitary(self, pyquil_program):
         """
         Abstract class for the transition type
         """

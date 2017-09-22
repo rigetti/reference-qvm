@@ -21,8 +21,8 @@ unitary resulting from the program evolution.
 from pyquil.quil import Program
 from pyquil.quilbase import *
 
-from .unitary_generator import tensor_gates
-from .qam import QAM
+from referenceqvm.unitary_generator import tensor_gates
+from referenceqvm.qam import QAM
 
 
 class QVM_Unitary(QAM):
@@ -64,7 +64,7 @@ class QVM_Unitary(QAM):
         if instruction.operator_name in self.gate_set or \
             instruction.operator_name in self.defgate_set:
             # get the unitary and evolve the state
-            unitary = tensor_gates(self.gate_set, self.defgate_set, \
+            unitary = tensor_gates(self.gate_set, self.defgate_set,
                                    instruction, self.num_qubits)
             self.umat = unitary.dot(self.umat)
             self.program_counter += 1

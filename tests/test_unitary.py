@@ -13,10 +13,10 @@ def test_random_gates(qvm_unitary):
 
     p = Program().inst([H(0), X(1), Y(2), Z(3)])
     test_unitary = qvm_unitary.unitary(p)
-    actual_unitary = np.kron(gate_matrix['Z'], \
-                        np.kron(gate_matrix['Y'], \
-                        np.kron(gate_matrix['X'], \
-                                gate_matrix['H'])))
+    actual_unitary = np.kron(gate_matrix['Z'],
+                             np.kron(gate_matrix['Y'],
+                                     np.kron(gate_matrix['X'],
+                                             gate_matrix['H'])))
     assert np.allclose(test_unitary, actual_unitary)
 
     p = Program().inst([X(2), CNOT(2, 1), CNOT(1, 0)])
