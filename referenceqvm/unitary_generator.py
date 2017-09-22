@@ -22,7 +22,7 @@ Note: uses SciPy sparse diagonal (DIA) representation to increase space and
 timeefficiency.
 """
 import scipy.sparse as sps
-from .gates import gate_matrix
+from referenceqvm.gates import gate_matrix
 from pyquil.quilbase import *
 
 """
@@ -130,20 +130,20 @@ def two_swap_helper(j, k, num_qubits, qubit_map):
 
     if j == k:
         # nothing happens
-        return (perm, new_qubit_map)
+        return perm, new_qubit_map
     elif j > k:
         # swap j right to k, until j at ind (k) and k at ind (k+1)
-        for i in xrange(j, k, -1):
+        for i in range(j, k, -1):
             perm = lifted_gate(i - 1, gate_matrix['SWAP'], num_qubits)\
                           .dot(perm)
             swap_inds_helper(i - 1, i, new_qubit_map)
     elif j < k:
         # swap j left to k, until j at ind (k) and k at ind (k-1)
-        for i in xrange(j, k, 1):
+        for i in range(j, k, 1):
             perm = lifted_gate(i, gate_matrix['SWAP'], num_qubits).dot(perm)
             swap_inds_helper(i, i + 1, new_qubit_map)
 
-    return (perm, new_qubit_map)
+    return perm, new_qubit_map
 
 
 def permutation_arbitrary(args, num_qubits):
@@ -225,11 +225,11 @@ def permutation_arbitrary(args, num_qubits):
 
     made_it = False
     right = True
-    while made_it == False:
+    while not made_it:
         array = range(len(inds)) if right else range(len(inds))[::-1]
         for i in array:
-            pmod, qubit_arr = two_swap_helper(np.where(qubit_arr == inds[i])[0][0], \
-                                              final_map[i], num_qubits, \
+            pmod, qubit_arr = two_swap_helper(np.where(qubit_arr == inds[i])[0][0],
+                                              final_map[i], num_qubits,
                                               qubit_arr)
 
             # update permutation matrix
@@ -243,7 +243,7 @@ def permutation_arbitrary(args, num_qubits):
 
     assert np.allclose(qubit_arr[final_map[-1]:final_map[0] + 1][::-1], inds)
 
-    return (perm, qubit_arr[::-1], start_i)
+    return perm, qubit_arr[::-1], start_i
 
 
 def permutation_arbitrary_swap(args, num_qubits):
@@ -292,8 +292,7 @@ def apply_gate(matrix, args, num_qubits):
 
     if not topological_QPU:
         # use local SWAPs
-        pi_permutation_matrix, final_map, start_i = \
-                                    permutation_arbitrary(args, num_qubits)
+        pi_permutation_matrix, final_map, start_i = permutation_arbitrary(args, num_qubits)
     else:
         # assume fully-connected, arbitrary SWAPs allowed
         raise NotImplementedError("Arbitrary SWAPs not yet implemented")
@@ -305,14 +304,15 @@ def apply_gate(matrix, args, num_qubits):
         args = value_get(args)
 
     if start_i != 0:
-        assert np.allclose(final_map[- gate_size - start_i: \
-                                     - start_i], np.array(args))
+        assert np.allclose(final_map[- gate_size - start_i: - start_i],
+                           np.array(args))
     elif start_i == 0:
         assert np.allclose(final_map[- gate_size - start_i:], np.array(args))
 
     v_matrix = lifted_gate(start_i, matrix, num_qubits)
-    return np.dot(np.conj(pi_permutation_matrix.T), \
+    return np.dot(np.conj(pi_permutation_matrix.T),
                   np.dot(v_matrix, pi_permutation_matrix))
+
 
 def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
     """
@@ -328,7 +328,6 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
     :return: input gate lifted to full Hilbert space and applied
     :rtype: np.array
     """
-    dict_check = None
     if pyquil_gate.operator_name in gate_set.keys():
         # Input gate set. Assumed to be standard gate set.
         dict_check = gate_set
@@ -344,14 +343,14 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
             if dict_check == gate_matrix else tuple(pyquil_gate.arguments)
 
     if len(pyquil_gate.parameters) != 0:
-        gate = apply_gate(dict_check[pyquil_gate.operator_name] \
-                        (*[value_get(p) for p in pyquil_gate.parameters]),\
-                        args, \
-                        num_qubits)
+        gate = apply_gate(dict_check[pyquil_gate.operator_name]
+                          (*[value_get(p) for p in pyquil_gate.parameters]),
+                          args,
+                          num_qubits)
     else:
-        gate = apply_gate(dict_check[pyquil_gate.operator_name], \
-                        args, \
-                        num_qubits)
+        gate = apply_gate(dict_check[pyquil_gate.operator_name],
+                          args,
+                          num_qubits)
 
     return gate
 
@@ -361,7 +360,7 @@ def value_get(param_obj):
     Function that returns the raw number / string stored in certain pyQuil
     objects.
     """
-    if isinstance(param_obj, (float, int, long)):
+    if isinstance(param_obj, (float, int)):
         return param_obj
     elif isinstance(param_obj, AbstractQubit):
         return param_obj.index()

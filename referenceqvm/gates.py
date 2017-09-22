@@ -23,22 +23,28 @@ Currently includes:
     :math:`\begin{pmatrix} 1 & 0 \\ 0 & e^{i \phi} \end{pmatrix}`
 
     RX(:math:`\phi`) - RX
-    :math:`\begin{pmatrix} \cos(\phi / 2) & -i \sin(\phi/2) \\ -i \sin(\phi/2) & \cos(\phi/2) \end{pmatrix}`
+    :math:`\begin{pmatrix} \cos(\phi / 2) & -i \sin(\phi/2) \\
+                           -i \sin(\phi/2) & \cos(\phi/2) \end{pmatrix}`
 
     RY(:math:`\phi`) - RY
-    :math:`\begin{pmatrix} \cos(\phi / 2) & -\sin(\phi / 2) \\ \sin(\phi/2) & \cos(\phi/2) \end{pmatrix}`
+    :math:`\begin{pmatrix} \cos(\phi / 2) & -\sin(\phi / 2) \\
+                           \sin(\phi/2) & \cos(\phi/2) \end{pmatrix}`
 
     RZ(:math:`\phi`) - RZ
-    :math:`\begin{pmatrix} \cos(\phi/2) - i \sin(\phi/2) & 0 \\ 0 & \cos(\phi/2) + i \sin(\phi/2) \end{pmatrix}`
+    :math:`\begin{pmatrix} \cos(\phi/2) - i \sin(\phi/2) & 0 \\
+                           0 & \cos(\phi/2) + i \sin(\phi/2) \end{pmatrix}`
 
     CZ - controlled-Z
-    :math:`P_0 \otimes I + P_1 \otimes Z = \begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&1&0 \\ 0&0&0&-1 \end{pmatrix}`
+    :math:`P_0 \otimes I + P_1 \otimes Z = \begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\
+                                            0&0&1&0 \\ 0&0&0&-1 \end{pmatrix}`
 
     CNOT - controlled-X / controlled-NOT
-    :math:`P_0 \otimes I + P_1 \otimes X = \begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&0&1 \\ 0&0&1&0 \end{pmatrix}`
+    :math:`P_0 \otimes I + P_1 \otimes X = \begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\
+                                            0&0&0&1 \\ 0&0&1&0 \end{pmatrix}`
 
     CCNOT - double-controlled-X
-    :math:`P_0 \otimes P_0 \otimes I + P_0 \otimes P_1 \otimes I + P_1 \otimes P_0 \otimes I + P_1 \otimes P_1 \otimes X`
+    :math:`P_0 \otimes P_0 \otimes I + P_0 \otimes P_1 \otimes I + P_1 \otimes P_0 \otimes I
+                                     + P_1 \otimes P_1 \otimes X`
 
     CPHASE00(:math:`\phi`) - controlled-phase-on-|00>
     :math:`\text{diag}(e^{i \phi}, 1, 1, 1,)`
@@ -66,7 +72,8 @@ Currently includes:
 
 Specialized gates / internal utility gates:
     BARENCO(:math:`\alpha, \phi, \theta`) - Barenco gate
-    :math:`\begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&e^{i\phi} \cos\theta & -i e^{i(\alpha-\phi)} \sin\theta \\ 0&0&-i e^{i(\alpha+\phi)} \sin\theta & e^{i\alpha} \cos\theta \end{pmatrix}`
+    :math:`\begin{pmatrix} 1&0&0&0 \\ 0&1&0&0 \\ 0&0&e^{i\phi} \cos\theta & -i e^{i(\alpha-\phi)}
+     \sin\theta \\ 0&0&-i e^{i(\alpha+\phi)} \sin\theta & e^{i\alpha} \cos\theta \end{pmatrix}`
 
     P0 - project-onto-zero
     :math:`\begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}`
@@ -185,38 +192,37 @@ utility_gates = {'P0': P0, 'P1': P1}
 # Specialized useful gates; not officially in standard gate set
 def BARENCO(alpha, phi, theta):
     lower_unitary = np.array([
-        [np.exp(1j * phi) * np.cos(theta), \
-         -1j * np.exp(1j * (alpha - phi)) * np.sin(theta)],
-        [-1j * np.exp(1j * (alpha + phi)) * np.sin(theta), \
-         np.exp(1j * alpha) * np.cos(theta)]])
+        [np.exp(1j * phi) * np.cos(theta), -1j * np.exp(1j * (alpha - phi)) * np.sin(theta)],
+        [-1j * np.exp(1j * (alpha + phi)) * np.sin(theta), np.exp(1j * alpha) * np.cos(theta)]])
     return np.kron(P0, np.eye(2)) + np.kron(P1, lower_unitary)
 
 
 """
 Dictionary of gates for use in referenceqvm.
 """
-gate_matrix = {'I': I,
-               'X': X,
-               'Y': Y,
-               'Z': Z,
-               'H': H,
-               'S': S,
-               'T': T,
-               'PHASE': PHASE,
-               'RX': RX,
-               'RY': RY,
-               'RZ': RZ,
-               'CNOT': CNOT,
-               'CCNOT': CCNOT,
-               'CPHASE00': CPHASE00,
-               'CPHASE01': CPHASE01,
-               'CPHASE10': CPHASE10,
-               'CPHASE': CPHASE,
-               'SWAP': SWAP,
-               'CSWAP': CSWAP,
-               'ISWAP': ISWAP,
-               'PSWAP': PSWAP,
-               'BARENCO': BARENCO,
-               'CZ': CZ
-               }
+gate_matrix = {
+    'I': I,
+    'X': X,
+    'Y': Y,
+    'Z': Z,
+    'H': H,
+    'S': S,
+    'T': T,
+    'PHASE': PHASE,
+    'RX': RX,
+    'RY': RY,
+    'RZ': RZ,
+    'CNOT': CNOT,
+    'CCNOT': CCNOT,
+    'CPHASE00': CPHASE00,
+    'CPHASE01': CPHASE01,
+    'CPHASE10': CPHASE10,
+    'CPHASE': CPHASE,
+    'SWAP': SWAP,
+    'CSWAP': CSWAP,
+    'ISWAP': ISWAP,
+    'PSWAP': PSWAP,
+    'BARENCO': BARENCO,
+    'CZ': CZ
+}
 

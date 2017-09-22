@@ -37,10 +37,12 @@ This will install the reference-qvm's dependencies if you do not already have th
 
 ## Development and Testing
 
-We use pytest for testing. Tests can be run from the top-level directory using:
+We use tox and pytest for testing. Tests can be executed from the top-level directory by simply
+running:
 ```
-pytest
+tox
 ```
+The setup is currently testing Python 2.7 and Python 3.6.
 
 ## Building the Docs
 
