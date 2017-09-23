@@ -23,4 +23,5 @@ setup(
         'mock'
     ],
     license='LICENSE',
+    test_suite='referenceqvm.tests'
 )

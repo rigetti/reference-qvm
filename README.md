@@ -26,15 +26,6 @@ pip install -r requirements.txt -e .
 
 This will install the reference-qvm's dependencies if you do not already have them.
 
-## Dependencies
-
-* NumPy
-* SciPy
-* pyquil
-* tqdm (optional, for development testing)
-* pytest (optional, for development testing)
-* Grove (optional, for development testing)
-
 ## Development and Testing
 
 We use tox and pytest for testing. Tests can be executed from the top-level directory by simply
