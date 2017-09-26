@@ -16,20 +16,20 @@ The reference-qvm is a quantum simulator of pyquil programs. It compliments the
 Forest-QVM, provided by Rigetti Computing, by providing a easy to install
 quantum-virtual-machine with the same API's as the Rigetti Forest-QVM accessed
 through pyquil.  It runs locally without the need for special keys or access
-rules.  Ideally, small experiments and programs written in pyquil and grove can
-be run with the reference-qvm while larger jobs or performance sensitive
-simulations can be run with the Forest-QVM.
+rules.  Reference-QVM works especially well for small experiments and programs written in
+`pyQuil <https://github.com/rigetticomputing/pyquil>`_ pyquil and
+`grove <https://github.com/rigetticomputing/grove>`_.  Larger jobs or performance
+sensitive simulations can be run with the Forest-QVM over the Forest API.
 
-The reference-qvm provides some functionality beyond the current Forest-QVM:
+The reference-qvm provides some particularly useful debugging functionality:
 
 1. Getting the unitary corresponding to a pyQuil program
 2. Easy customization of error models by specification of pre or post hooks in
    the state-machine model
 
-Upcoming development roadmap for reference-qvm:
+Future features for reference-qvm:
 
 1. Standard class of error models for gates and measurement: T1/T2, bit-,
    phase-, bit-phase-flip, depolarizing channel
 2. Stochastic evolution of the wavefunction under a noise model
 3. Density matrix evolution (pure states and mixed states)
-

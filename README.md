@@ -1,15 +1,14 @@
 # Reference QVM
 
 The `referenceqvm` is the reference implementation of the QVM outlined in the
-arXiv:1608:03355 by Robert Smith, Spike Curtis, and Will Zeng. The purpose of
-this rQVM is to allow rapid prototyping and development of quantum programs
-using pyQuil.
+arXiv:1608:03355 by Robert Smith, Spike Curtis, and Will Zeng. It is a research package that 
+supports rapid prototyping and development of quantum programs using pyQuil.
 
-Currently, this QVM supports all functionality in the Quil specifications, 
+Currently, this QVM supports a subset of functionality in the Quil specifications, 
 excepting certain functions (DEFCIRCUIT, WAIT, NOP).
 
 Noise models (dephasing, Kraus operators), parametrization with bits in 
-classical memory, and other features will be added soon.
+classical memory, and other features will be added in future releases.
 
 
 ## Installation
