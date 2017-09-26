@@ -1,3 +1,5 @@
+[![Build Status](https://semaphoreci.com/api/v1/rigetti/reference-qvm/branches/master/badge.svg)](https://semaphoreci.com/rigetti/reference-qvm)
+
 # Reference QVM
 
 The `referenceqvm` is the reference implementation of the QVM outlined in the
