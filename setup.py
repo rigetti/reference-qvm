@@ -14,8 +14,10 @@ setup(
         "referenceqvm"
     ],
     install_requires=[
-        'numpy',
-        'scipy',
+        "numpy >= 1.11.1",
+        "scipy >= 0.18.1",
+        "pyquil >= 1.1.1",
+        "funcsigs"
     ],
     setup_requires=['pytest-runner'],
     tests_require=[
