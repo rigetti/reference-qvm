@@ -8,7 +8,7 @@ setup(
     version=__version__,
     author="Rigetti Computing",
     author_email="softapps@rigetti.com",
-    url="https://github.com/rigetticomputing/referenceqvm.git",
+    url="https://github.com/rigetticomputing/reference-qvm.git",
     description="a reference qvm for simulation of pyQuil programs",
     packages=[
         "referenceqvm"
