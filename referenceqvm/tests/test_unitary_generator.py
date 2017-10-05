@@ -212,8 +212,8 @@ def test_tensor_gates_two_qubit():
     assert np.allclose(test_unitary, true_unitary)
 
 
-def test_tensor_up():
-    """Testing tesnor up type checking and correctness"""
+def test_tensor_up_error_catch():
+    """Testing tensor up type checking"""
     x_term = PauliTerm("X", 5)
 
     # testing type rejection
@@ -224,22 +224,25 @@ def test_tensor_up():
     with pytest.raises(IndexError):
         tensor_up(PauliSum([x_term]), 3)
 
+
+def test_tensor_up_correctness():
+    """Check the correctness of the tensor up routine"""
     xy_term = PauliSum([PauliTerm("X", 0)*PauliTerm("Y", 1)])
 
     # test correctness
     trial_matrix = tensor_up(xy_term, 2)
     true_matrix = np.kron(gate_matrix['Y'], gate_matrix['X'])
-    assert np.allclose(trial_matrix, true_matrix)
+    np.testing.assert_allclose(trial_matrix, true_matrix)
 
     x1_term = PauliSum([PauliTerm("X", 1)])
     trial_matrix = tensor_up(x1_term, 2)
     true_matrix = np.kron(gate_matrix['X'], gate_matrix['I'])
-    assert np.allclose(trial_matrix, true_matrix)
+    np.testing.assert_allclose(trial_matrix, true_matrix)
 
     zpz_term = PauliTerm("Z", 0) + PauliTerm("Z", 1)
     trial_matrix = tensor_up(zpz_term, 2)
     true_matrix = np.zeros((4, 4))
     true_matrix[0, 0] = 2
     true_matrix[-1, -1] = -2
-    assert np.allclose(trial_matrix, true_matrix)
+    np.testing.assert_allclose(trial_matrix, true_matrix)
 
