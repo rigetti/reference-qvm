@@ -21,6 +21,7 @@ space for qubits.
 Note: uses SciPy sparse diagonal (DIA) representation to increase space and
 timeefficiency.
 """
+import warnings
 import scipy.sparse as sps
 from referenceqvm.gates import gate_matrix
 from pyquil.quilbase import *
@@ -382,11 +383,11 @@ def tensor_up(pauli_terms, num_qubits):
     if not isinstance(pauli_terms, PauliSum):
         raise TypeError("can only tensor PauliSum")
 
-    if __debug__:
-        for term in pauli_terms.terms:
-            if len(term._ops.keys()) > 0:
-                if max(term._ops.keys()) >= num_qubits:
-                    raise IndexError("pauli_terms has higher index than qubits")
+    # check if operator is valid w.r.t the input number of qubits
+    for term in pauli_terms.terms:
+        if len(term._ops.keys()) > 0:
+            if max(term._ops.keys()) >= num_qubits:
+                raise IndexError("pauli_terms has higher index than qubits")
 
     big_hilbert = np.zeros((2 ** num_qubits, 2 ** num_qubits), dtype=complex)
     # left kronecker product corresponds to the correct basis ordering

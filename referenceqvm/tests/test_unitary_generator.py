@@ -1,4 +1,5 @@
 import pytest
+import warnings
 import numpy as np
 from referenceqvm.unitary_generator import (lifted_gate, apply_gate,
                                             tensor_gates, tensor_up)
@@ -245,4 +246,3 @@ def test_tensor_up_correctness():
     true_matrix[0, 0] = 2
     true_matrix[-1, -1] = -2
     np.testing.assert_allclose(trial_matrix, true_matrix)
-
