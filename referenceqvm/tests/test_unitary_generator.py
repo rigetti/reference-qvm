@@ -1,11 +1,14 @@
 import pytest
+import warnings
 import numpy as np
-from referenceqvm.unitary_generator import lifted_gate, apply_gate, tensor_gates
+from referenceqvm.unitary_generator import (lifted_gate, apply_gate,
+                                            tensor_gates, tensor_up)
 from referenceqvm.gates import gate_matrix, utility_gates
 from pyquil.quil import Program
 from pyquil.gates import H as Hgate
 from pyquil.gates import RX as RXgate
 from pyquil.gates import CNOT as CNOTgate
+from pyquil.paulis import PauliTerm, PauliSum
 
 
 def test_lifted_swap():
@@ -208,3 +211,38 @@ def test_tensor_gates_two_qubit():
     test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 4).toarray()
     true_unitary = apply_gate(gate_matrix['CNOT'], [1, 3], 4).toarray()
     assert np.allclose(test_unitary, true_unitary)
+
+
+def test_tensor_up_error_catch():
+    """Testing tensor up type checking"""
+    x_term = PauliTerm("X", 5)
+
+    # testing type rejection
+    with pytest.raises(TypeError):
+        tensor_up(x_term, 5)
+
+    # testing index rejection
+    with pytest.raises(IndexError):
+        tensor_up(PauliSum([x_term]), 3)
+
+
+def test_tensor_up_correctness():
+    """Check the correctness of the tensor up routine"""
+    xy_term = PauliSum([PauliTerm("X", 0)*PauliTerm("Y", 1)])
+
+    # test correctness
+    trial_matrix = tensor_up(xy_term, 2)
+    true_matrix = np.kron(gate_matrix['Y'], gate_matrix['X'])
+    np.testing.assert_allclose(trial_matrix, true_matrix)
+
+    x1_term = PauliSum([PauliTerm("X", 1)])
+    trial_matrix = tensor_up(x1_term, 2)
+    true_matrix = np.kron(gate_matrix['X'], gate_matrix['I'])
+    np.testing.assert_allclose(trial_matrix, true_matrix)
+
+    zpz_term = PauliTerm("Z", 0) + PauliTerm("Z", 1)
+    trial_matrix = tensor_up(zpz_term, 2)
+    true_matrix = np.zeros((4, 4))
+    true_matrix[0, 0] = 2
+    true_matrix[-1, -1] = -2
+    np.testing.assert_allclose(trial_matrix, true_matrix)
