@@ -21,11 +21,15 @@ space for qubits.
 Note: uses SciPy sparse diagonal (DIA) representation to increase space and
 timeefficiency.
 """
+from collections import Sequence
+from numbers import Integral
 import warnings
+
 import scipy.sparse as sps
-from referenceqvm.gates import gate_matrix
 from pyquil.quilbase import *
 from pyquil.paulis import PauliSum
+
+from referenceqvm.gates import gate_matrix
 
 """
 If True, only physically-implementable operations allowed!
@@ -74,7 +78,7 @@ def lifted_gate(i, matrix, num_qubits):
     else:
         gate_size = np.log2(matrix.shape[0])
     # Is starting gate index out of range?
-    if i < 0 or i >= num_qubits + 1 - gate_size:
+    if not (0 <= i < num_qubits + 1 - gate_size):
         raise ValueError("Gate index out of range!")
 
     # Outer-product to lift gate to complete Hilbert space
@@ -124,7 +128,7 @@ def two_swap_helper(j, k, num_qubits, qubit_map):
              and the new qubit_map, after permutation is made
     :rtype: tuple (np.array, np.array)
     """
-    if j >= num_qubits or k >= num_qubits or j < 0 or k < 0:
+    if not (0 <= j < num_qubits and 0 <= k < num_qubits):
         raise ValueError("Permutation SWAP index not valid")
 
     perm = sps.eye(2 ** num_qubits).astype(np.complex128)
@@ -187,16 +191,17 @@ def permutation_arbitrary(args, num_qubits):
         start_i - starting index to lift gate from
     :rtype:  tuple (sparse_array, np.array, int)
     """
-    # Check input
-    if type(args) is tuple or type(args) is list:
-        if len(args) is 0:
-            raise TypeError("Need at least one qubit index to perform"
-                            "permutation")
-    else:
+    # Don't permit NoneType or empty sequences, but allow 0
+    if args is None or (isinstance(args, Sequence) and not args):
+        raise ValueError("Need at least one qubit index to perform"
+                         "permutation")
+
+    if not isinstance(args, Sequence):
         args = [args]
-    inds = np.array([value_get(x) for x in list(args)])
+
+    inds = np.array([value_get(x) for x in args])
     for ind in inds:
-        if ind >= num_qubits or ind < 0:
+        if not (0 <= ind < num_qubits):
             raise ValueError("Permutation SWAP index not valid")
 
     # Begin construction of permutation
@@ -273,7 +278,7 @@ def apply_gate(matrix, args, num_qubits):
     :return: transformed gate that acts on the specified qubits
     :rtype: np.array
     """
-    if num_qubits < 1 or type(num_qubits) is not int:
+    if not isinstance(num_qubits, Integral) or num_qubits < 1:
         raise ValueError("Improper number of qubits passed.")
     if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
         raise TypeError("Gate array must be two-dimensional and "
@@ -288,7 +293,7 @@ def apply_gate(matrix, args, num_qubits):
         gate_size = int(np.log2(matrix.shape[0]))
 
     # Is gate size proper?
-    if gate_size > num_qubits or gate_size < 1:
+    if not (1 <= gate_size <= num_qubits):
         raise TypeError("Invalid gate size. k-qubit gates supported, for "
                         "k in [1, num_qubits]")
 
@@ -300,15 +305,15 @@ def apply_gate(matrix, args, num_qubits):
         raise NotImplementedError("Arbitrary SWAPs not yet implemented")
 
     # Transform qubit indices into ints
-    if type(args) == tuple or type(args) == list:
-        args = tuple([value_get(x) for x in args])
+    if isinstance(args, Sequence):
+        args = tuple(value_get(x) for x in args)
     else:
         args = value_get(args)
 
-    if start_i != 0:
+    if start_i:
         assert np.allclose(final_map[- gate_size - start_i: - start_i],
                            np.array(args))
-    elif start_i == 0:
+    else:
         assert np.allclose(final_map[- gate_size - start_i:], np.array(args))
 
     v_matrix = lifted_gate(start_i, matrix, num_qubits)
@@ -330,10 +335,10 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
     :return: input gate lifted to full Hilbert space and applied
     :rtype: np.array
     """
-    if pyquil_gate.operator_name in gate_set.keys():
+    if pyquil_gate.operator_name in gate_set:
         # Input gate set. Assumed to be standard gate set.
         dict_check = gate_set
-    elif pyquil_gate.operator_name in defgate_set.keys():
+    elif pyquil_gate.operator_name in defgate_set:
         # defined_gates
         dict_check = defgate_set
     else:
@@ -341,10 +346,10 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
                          "found in standard gate set or defined "
                          "gate set of program!")
 
-    args = tuple([value_get(x) for x in pyquil_gate.arguments]) \
+    args = tuple(value_get(x) for x in pyquil_gate.arguments) \
             if dict_check == gate_matrix else tuple(pyquil_gate.arguments)
 
-    if len(pyquil_gate.parameters) != 0:
+    if pyquil_gate.parameters:
         gate = apply_gate(dict_check[pyquil_gate.operator_name]
                           (*[value_get(p) for p in pyquil_gate.parameters]),
                           args,
@@ -385,7 +390,7 @@ def tensor_up(pauli_terms, num_qubits):
 
     # check if operator is valid w.r.t the input number of qubits
     for term in pauli_terms.terms:
-        if len(term._ops.keys()) > 0:
+        if term._ops.keys():
             if max(term._ops.keys()) >= num_qubits:
                 raise IndexError("pauli_terms has higher index than qubits")
 
