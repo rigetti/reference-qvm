@@ -71,8 +71,7 @@ def lifted_gate(i, matrix, num_qubits):
     """
     # input is checked in parent function apply_gate()
     # Find gate size (number of qubits operated on)
-    quot, rem = divmod(np.log2(matrix.shape[0]), 1)
-    if rem > 0:
+    if (matrix.shape[0] & matrix.shape[0] - 1) != 0:
         raise TypeError("Invalid gate size. Must be power of 2! "
                         "Received {} size".format(matrix.shape))
     else:
@@ -285,8 +284,7 @@ def apply_gate(matrix, args, num_qubits):
                         "square matrix.")
 
     # Find gate size (number of qubits operated on)
-    quot, rem = divmod(np.log2(matrix.shape[0]), 1)
-    if rem > 0:
+    if (matrix.shape[0] & matrix.shape[0] - 1) != 0:
         raise TypeError("Invalid gate size. Must be power of 2! "
                         "Received {} size".format(matrix.shape))
     else:
