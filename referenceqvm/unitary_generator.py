@@ -179,8 +179,8 @@ def permutation_arbitrary(args, num_qubits):
     Done in preparation for arbitrary gate application on
     adjacent qubits.
 
-    :param tuple args: (int) Qubit indices in the order the gate is
-                 applied to.
+    :param Sequence args: (int) Qubit indices in the order the gate is
+        applied to.
     :param int num_qubits: Number of qubits in system
 
     :return:
@@ -191,11 +191,11 @@ def permutation_arbitrary(args, num_qubits):
     :rtype:  tuple (sparse_array, np.array, int)
     """
     # Don't permit NoneType or empty sequences, but allow 0
-    if args is None or (isinstance(args, Sequence) and not args):
-        raise ValueError("Need at least one qubit index to perform"
-                         "permutation")
-
-    if not isinstance(args, Sequence):
+    if isinstance(args, Sequence):
+        if not args:
+            raise ValueError("Need at least one qubit index to perform"
+                             "permutation")
+    else:
         args = [args]
 
     inds = np.array([value_get(x) for x in args])
