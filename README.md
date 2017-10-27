@@ -17,7 +17,7 @@ classical memory, and other features will be added in future releases.
 
 You can install reference-qvm directly from the Python package manager `pip` using:
 ```
-pip install reference-qvm
+pip install referenceqvm
 ```
 
 To instead install reference-qvm from source, clone this repository, `cd` into it, and run:
