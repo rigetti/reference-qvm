@@ -115,7 +115,7 @@ class QVM_Wavefunction(QAM):
             proj_psi = measure_0.dot(self.wf)
         else:
             proj_psi = measure_0.dot(psi)
-        prob_zero = np.dot(np.conj(proj_psi).T, proj_psi)[0, 0]
+        prob_zero = np.dot(np.conj(proj_psi).T, proj_psi)
 
         # generate random number to 'roll' for measurement
         if np.random.random() < prob_zero:
