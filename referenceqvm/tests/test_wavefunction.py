@@ -30,28 +30,28 @@ def test_belltest(qvm):
     """
     prog = Program().inst([Hgate(0), CNOTgate(0, 1)])
     bellout, _ = qvm.wavefunction(prog)
-    bell = np.zeros((4, 1))
-    bell[0, 0] = bell[-1, 0] = 1.0 / np.sqrt(2)
+    bell = np.zeros(4)
+    bell[0] = bell[-1] = 1.0 / np.sqrt(2)
     assert np.allclose(bellout.amplitudes, bell)
 
 
 def test_occupation_basis(qvm):
     prog = Program().inst([Xgate(0), Xgate(1), Igate(2), Igate(3)])
-    state = np.zeros((2 ** 4, 1))
-    state[3, 0] = 1.0
+    state = np.zeros(2 ** 4)
+    state[3] = 1.0
     meanfield_state, _ = qvm.wavefunction(prog)
     assert np.allclose(meanfield_state.amplitudes, state)
 
 
 def test_exp_circuit(qvm):
-    true_wf = np.array([[ 0.54030231-0.84147098j], 
-                        [ 0.00000000+0.j],
-                        [ 0.00000000+0.j],
-                        [ 0.00000000+0.j],
-                        [ 0.00000000+0.j],
-                        [ 0.00000000+0.j],
-                        [ 0.00000000+0.j],
-                        [ 0.00000000+0.j]])
+    true_wf = np.array([0.54030231-0.84147098j,
+                        0.00000000+0.j,
+                        0.00000000+0.j,
+                        0.00000000+0.j,
+                        0.00000000+0.j,
+                        0.00000000+0.j,
+                        0.00000000+0.j,
+                        0.00000000+0.j])
 
     create2kill1 = PauliTerm("X", 1, -0.25)*PauliTerm("Y", 2)
     create2kill1 += PauliTerm("Y", 1, 0.25)*PauliTerm("Y", 2)
@@ -64,14 +64,13 @@ def test_exp_circuit(qvm):
         prog += single_exp_prog
 
     wf, _ = qvm.wavefunction(prog)
-    wf = np.reshape(wf.amplitudes, (-1, 1))
+    wf = np.reshape(wf.amplitudes, -1)
     assert np.allclose(wf, true_wf)
 
 
 def test_qaoa_circuit(qvm):
     wf_true = [0.00167784 + 1.00210180e-05*1j, 0.50000000 - 4.99997185e-01*1j,
                0.50000000 - 4.99997185e-01*1j, 0.00167784 + 1.00210180e-05*1j]
-    wf_true = np.reshape(np.array(wf_true), (4, 1))
     prog = Program()
     prog.inst([RYgate(np.pi/2)(0), RXgate(np.pi)(0),
                RYgate(np.pi/2)(1), RXgate(np.pi)(1),
@@ -139,5 +138,4 @@ def test_larger_qaoa_circuit(qvm):
                         -1.24927731e-01+0.00329533*1j,
                         8.43771693e-05-0.1233845*1j])
 
-    wf_true = np.reshape(wf_true, (2 ** 4, 1))
     assert np.allclose(wf_test.amplitudes, wf_true)

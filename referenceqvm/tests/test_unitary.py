@@ -37,7 +37,7 @@ def test_identity(qvm_unitary):
 def test_qaoa_unitary(qvm_unitary):
     wf_true = [0.00167784 + 1.00210180e-05*1j, 0.50000000 - 4.99997185e-01*1j,
                0.50000000 - 4.99997185e-01*1j, 0.00167784 + 1.00210180e-05*1j]
-    wf_true = np.reshape(np.array(wf_true), (4, 1))
+
     prog = Program()
     prog.inst([RY(np.pi/2)(0), RX(np.pi)(0),
                RY(np.pi/2)(1), RX(np.pi)(1),
@@ -46,8 +46,8 @@ def test_qaoa_unitary(qvm_unitary):
                RX(-2*2.74973750579)(0), RX(-2*2.74973750579)(1)])
 
     test_unitary = qvm_unitary.unitary(prog)
-    wf_test = np.zeros((4, 1))
-    wf_test[0, 0] = 1.0
+    wf_test = np.zeros(4)
+    wf_test[0] = 1.0
     wf_test = test_unitary.dot(wf_test)
     assert np.allclose(wf_test, wf_true)
 

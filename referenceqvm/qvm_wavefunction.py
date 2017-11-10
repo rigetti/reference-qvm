@@ -115,7 +115,7 @@ class QVM_Wavefunction(QAM):
             proj_psi = measure_0.dot(self.wf)
         else:
             proj_psi = measure_0.dot(psi)
-        prob_zero = np.dot(np.conj(proj_psi).T, proj_psi)[0, 0]
+        prob_zero = np.dot(np.conj(proj_psi).T, proj_psi)
 
         # generate random number to 'roll' for measurement
         if np.random.random() < prob_zero:
@@ -372,8 +372,8 @@ class QVM_Wavefunction(QAM):
             mask = None
 
         # setup wavefunction
-        self.wf = np.zeros((2 ** self.num_qubits, 1), dtype=np.complex128)
-        self.wf[0, 0] = 1.0
+        self.wf = np.zeros(2 ** self.num_qubits, dtype=np.complex128)
+        self.wf[0] = complex(1.0, 0)
 
         # evolve wf with program, via kernel
         self.kernel()

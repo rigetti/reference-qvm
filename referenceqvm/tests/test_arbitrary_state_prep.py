@@ -13,7 +13,7 @@ def test_generate_arbitrary_states(qvm):
         wf, _ = qvm.wavefunction(p)
 
         # check actual part of wavefunction
-        assert np.allclose(v.reshape((-1, 1)), wf.amplitudes[:len(v), :] * norm)
+        assert np.allclose(v.reshape(-1), wf.amplitudes[:len(v)] * norm)
 
         # check remaining zeros part of wavefunction
         assert np.allclose(np.zeros((wf.amplitudes.shape[0] - len(v), 1)),
