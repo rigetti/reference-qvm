@@ -23,7 +23,7 @@ import numpy as np
 from referenceqvm.unitary_generator import value_get
 
 from pyquil.quil import Program
-from pyquil.quilbase import (Instr,
+from pyquil.quilbase import (Gate,
                              Measurement,
                              UnaryClassicalInstruction,
                              BinaryClassicalInstruction)
@@ -72,9 +72,6 @@ class QAM(object):
             raise NotImplementedError("QAM needs to be subclassed in order to "
                                       "load program")
 
-        # synthesize program into instruction list
-        synthesized_prog = pyquil_program.synthesize()
-
         # create defgate dictionary
         defined_gates = {}
         for dg in pyquil_program.defined_gates:
@@ -83,10 +80,9 @@ class QAM(object):
 
         # if QVM_Unitary, check if all instructions are valid.
         invalid = False
-        for index, action in enumerate(synthesized_prog):
-            if isinstance(action, Instr):
-                if (action.operator_name not in self.gate_set.keys()
-                   and action.operator_name not in self.defgate_set.keys()):
+        for instr in pyquil_program:
+            if isinstance(instr, Gate):
+                if not (instr.name in self.gate_set.keys() or instr.name in self.defgate_set.keys()):
                     invalid = True
                     break
             else:
@@ -98,7 +94,7 @@ class QAM(object):
                             "supported")
 
         # set internal program and counter to their appropriate values
-        self.program = synthesized_prog
+        self.program = pyquil_program
         self.program_counter = 0
 
         # setup quantum and classical memory
@@ -121,10 +117,10 @@ class QAM(object):
         for index, inst in enumerate(self.program):
             if isinstance(inst, Measurement):
                 # instruction is measurement, acts on qbits and cbits
-                if value_get(inst.arguments[0]) > q_max:
-                    q_max = value_get(inst.arguments[0])
-                elif value_get(inst.arguments[1]) > c_max:
-                    c_max = value_get(inst.arguments[1])
+                if value_get(inst.qubit) > q_max:
+                    q_max = value_get(inst.qubit)
+                elif value_get(inst.classical_reg) > c_max:
+                    c_max = value_get(inst.classical_reg)
             elif isinstance(inst, UnaryClassicalInstruction):
                 # instruction acts on cbits
                 if value_get(inst.target) > c_max:
@@ -135,10 +131,9 @@ class QAM(object):
                     c_max = value_get(inst.left)
                 elif value_get(inst.right) > c_max:
                     c_max = value_get(inst.right)
-            elif isinstance(inst, Instr):
-                # instruction is Gate or DefGate, acts on qbits
-                if max(map(lambda x: value_get(x), inst.arguments)) > q_max:
-                    q_max = max(map(lambda x: value_get(x), inst.arguments))
+            elif isinstance(inst, Gate):
+                if max(map(lambda x: value_get(x), inst.qubits)) > q_max:
+                    q_max = max(map(lambda x: value_get(x), inst.qubits))
         q_max += 1  # 0-indexed
         c_max += 1  # 0-indexed
         q_limit = 51

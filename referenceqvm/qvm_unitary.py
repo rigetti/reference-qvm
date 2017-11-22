@@ -59,10 +59,9 @@ class QVM_Unitary(QAM):
         """
         Implements a transition on the unitary-qvm.
 
-        :param instruction: QuilAction gate to be implemented
+        :param Gate instruction: QuilAction gate to be implemented
         """
-        if instruction.operator_name in self.gate_set or \
-            instruction.operator_name in self.defgate_set:
+        if instruction.name in self.gate_set or instruction.name in self.defgate_set:
             # get the unitary and evolve the state
             unitary = tensor_gates(self.gate_set, self.defgate_set,
                                    instruction, self.num_qubits)
@@ -70,7 +69,7 @@ class QVM_Unitary(QAM):
             self.program_counter += 1
         else:
             raise TypeError("Gate {} is not in the "
-                            "gate set".format(instruction.operator_name))
+                            "gate set".format(instruction.name))
 
     def unitary(self, pyquil_program):
         """

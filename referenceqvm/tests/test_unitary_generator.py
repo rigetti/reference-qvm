@@ -176,39 +176,39 @@ def test_single_qubit_gates():
 
 def test_tensor_gates_single_qubit():
     prog = Program().inst([Hgate(0)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 1).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 1).toarray()
     true_unitary = gate_matrix['H']
     assert np.allclose(test_unitary, true_unitary)
 
     prog = Program().inst([Hgate(0)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 5).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 5).toarray()
     true_unitary = np.kron(np.eye(2**4), gate_matrix['H'])
     assert np.allclose(test_unitary, true_unitary)
 
     prog = Program().inst([RXgate(0.2)(3)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 5).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 5).toarray()
     true_unitary = np.kron(np.eye(2**1), np.kron(gate_matrix['RX'](0.2),  np.eye(2**3)))
     assert np.allclose(test_unitary, true_unitary)
 
     prog = Program().inst([RXgate(0.5)(4)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 5).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 5).toarray()
     true_unitary = np.kron(np.eye(2**0), np.kron(gate_matrix['RX'](0.5),  np.eye(2**4)))
     assert np.allclose(test_unitary, true_unitary)
 
 
 def test_tensor_gates_two_qubit():
     prog = Program().inst([CNOTgate(0, 1)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 4).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 4).toarray()
     true_unitary = apply_gate(gate_matrix['CNOT'], [0, 1], 4).toarray()
     assert np.allclose(test_unitary, true_unitary)
 
     prog = Program().inst([CNOTgate(1, 0)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 4).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 4).toarray()
     true_unitary = apply_gate(gate_matrix['CNOT'], [1, 0], 4).toarray()
     assert np.allclose(test_unitary, true_unitary)
 
     prog = Program().inst([CNOTgate(1, 3)])
-    test_unitary = tensor_gates(gate_matrix, {}, prog.actions[0][1], 4).toarray()
+    test_unitary = tensor_gates(gate_matrix, {}, prog.instructions[0], 4).toarray()
     true_unitary = apply_gate(gate_matrix['CNOT'], [1, 3], 4).toarray()
     assert np.allclose(test_unitary, true_unitary)
 
