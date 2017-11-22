@@ -23,7 +23,6 @@ timeefficiency.
 """
 from collections import Sequence
 from numbers import Integral
-import warnings
 
 import scipy.sparse as sps
 from pyquil.quilbase import *
@@ -327,16 +326,16 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
 
     :param dict gate_set: gate dictionary (name, matrix) pairs
     :param dict defgate_set: defined gate dictionary (name, matrix) pairs
-    :param Instr pyquil_gate: Instruction object for pyQuil gate
+    :param Gate pyquil_gate: Instruction object for pyQuil gate
     :param int num_qubits: number of qubits in Hilbert space
 
     :return: input gate lifted to full Hilbert space and applied
     :rtype: np.array
     """
-    if pyquil_gate.operator_name in gate_set:
+    if pyquil_gate.name in gate_set:
         # Input gate set. Assumed to be standard gate set.
         dict_check = gate_set
-    elif pyquil_gate.operator_name in defgate_set:
+    elif pyquil_gate.name in defgate_set:
         # defined_gates
         dict_check = defgate_set
     else:
@@ -344,16 +343,16 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
                          "found in standard gate set or defined "
                          "gate set of program!")
 
-    args = tuple(value_get(x) for x in pyquil_gate.arguments) \
-            if dict_check == gate_matrix else tuple(pyquil_gate.arguments)
+    args = tuple(value_get(x) for x in pyquil_gate.qubits) \
+            if dict_check == gate_matrix else tuple(pyquil_gate.qubits)
 
-    if pyquil_gate.parameters:
-        gate = apply_gate(dict_check[pyquil_gate.operator_name]
-                          (*[value_get(p) for p in pyquil_gate.parameters]),
+    if pyquil_gate.params:
+        gate = apply_gate(dict_check[pyquil_gate.name]
+                          (*[value_get(p) for p in pyquil_gate.params]),
                           args,
                           num_qubits)
     else:
-        gate = apply_gate(dict_check[pyquil_gate.operator_name],
+        gate = apply_gate(dict_check[pyquil_gate.name],
                           args,
                           num_qubits)
 
@@ -412,8 +411,8 @@ def value_get(param_obj):
     """
     if isinstance(param_obj, (float, int)):
         return param_obj
-    elif isinstance(param_obj, AbstractQubit):
-        return param_obj.index()
+    elif isinstance(param_obj, Qubit):
+        return param_obj.index
     elif isinstance(param_obj, Addr):
         return param_obj.address
     elif isinstance(param_obj, Slot):

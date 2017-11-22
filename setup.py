@@ -16,7 +16,7 @@ setup(
     install_requires=[
         "numpy >= 1.11.1",
         "scipy >= 0.18.1",
-        "pyquil >= 1.1.1",
+        "pyquil >= 1.4.2",
         "funcsigs"
     ],
     setup_requires=['pytest-runner'],

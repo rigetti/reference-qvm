@@ -42,8 +42,7 @@ import numpy as np
 import scipy.sparse as sps
 
 from pyquil.quil import Program
-from pyquil.quilbase import (Instr,
-                             Measurement,
+from pyquil.quilbase import (Measurement,
                              UnaryClassicalInstruction,
                              BinaryClassicalInstruction,
                              ClassicalTrue,
@@ -59,7 +58,7 @@ from pyquil.quilbase import (Instr,
                              JumpConditional,
                              JumpWhen,
                              JumpUnless,
-                             Halt)
+                             Halt, Gate)
 from pyquil.wavefunction import Wavefunction
 from referenceqvm.unitary_generator import lifted_gate, tensor_gates, value_get
 from referenceqvm.gates import utility_gates
@@ -167,8 +166,8 @@ class QVM_Wavefunction(QAM):
         """
         if isinstance(instruction, Measurement):
             # perform measurement and modify wf in-place
-            t_qbit = value_get(instruction.arguments[0])
-            t_cbit = value_get(instruction.arguments[1])
+            t_qbit = value_get(instruction.qubit)
+            t_cbit = value_get(instruction.classical_reg)
             measured_val, unitary = self.measurement(t_qbit, psi=None)
             self.wf = unitary.dot(self.wf)
 
@@ -176,7 +175,7 @@ class QVM_Wavefunction(QAM):
             self.classical_memory[t_cbit] = measured_val
             self.program_counter += 1
 
-        elif isinstance(instruction, Instr):
+        elif isinstance(instruction, Gate):
             # apply Gate or DefGate
             unitary = tensor_gates(self.gate_set, self.defgate_set, instruction, self.num_qubits)
             self.wf = unitary.dot(self.wf)
