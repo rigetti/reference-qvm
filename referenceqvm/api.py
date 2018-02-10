@@ -6,8 +6,8 @@ from referenceqvm.qvm_wavefunction import QVM_Wavefunction
 from referenceqvm.qvm_unitary import QVM_Unitary
 
 
-def SyncConnection(type_trans='wavefunction',
-                   gate_set=gate_matrix):
+def QVMConnection(type_trans='wavefunction',
+                  gate_set=gate_matrix):
         """
         Initialize a qvm of a particular type. The type corresponds to the
         type of transition the QVM can perform.
