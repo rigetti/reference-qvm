@@ -53,13 +53,13 @@ The qvm can be accessed in a similar way to the Forest QVM access.
 Start by importing the synchronous connection object from the `referenceqvm.api` module
 
 ```python
-from referenceqvm.api import SyncConnection
+from referenceqvm.api import QVMConnection
 ```
 
 and initialize a connection to the reference-qvm
 
 ```python
-qvm = SyncConnection()
+qvm = QVMConnection()
 ```
 
 By default, the Connection object uses the wavefunction transition type.  
@@ -75,14 +75,14 @@ small quantum programs on a local machine.  For example, the same code (up to th
 >>> import pyquil.quil as pq
 >>> import referenceqvm.api as api
 >>> from pyquil.gates import *
->>> qvm = api.SyncConnection()
+>>> qvm = api.QVMConnection()
 >>> p = pq.Program(H(0), CNOT(0,1))
 <pyquil.pyquil.Program object at 0x101ebfb50>
 >>> qvm.wavefunction(p)[0]
 [(0.7071067811865475+0j), 0j, 0j, (0.7071067811865475+0j)]
 ```
 
-SyncConnection can also initialize a QVM that does not return a wavefunction but instead a unitary corresponding
+QVMConnection can also initialize a QVM that does not return a wavefunction but instead a unitary corresponding
 to the pyquil program.  This can be extremely useful in terms of debugging and understanding gate physics.  For example,
 we can examine the unitary for a CNOT operator.
 
@@ -90,7 +90,7 @@ we can examine the unitary for a CNOT operator.
 >>> import pyquil.quil as pq
 >>> import referenceqvm.api as api
 >>> from pyquil.gates import CNOT
->>> qvm = api.SyncConnection(type_trans='unitary')
+>>> qvm = api.QVMConnection(type_trans='unitary')
 >>> p = pq.Program(CNOT(1, 0))
 >>> u = qvm.unitary(p)
 >>> print(u)
