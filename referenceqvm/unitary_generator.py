@@ -382,6 +382,8 @@ def tensor_up(pauli_terms, num_qubits):
     :param num_qubits: (int) number of qubits in the system
     :returns: (numpy array) representation of the paui_terms operator
     """
+    from scipy.sparse import kron, csr_matrix
+
     if not isinstance(pauli_terms, PauliSum):
         raise TypeError("can only tensor PauliSum")
 
@@ -391,17 +393,18 @@ def tensor_up(pauli_terms, num_qubits):
             if max(term._ops.keys()) >= num_qubits:
                 raise IndexError("pauli_terms has higher index than qubits")
 
-    big_hilbert = np.zeros((2 ** num_qubits, 2 ** num_qubits), dtype=complex)
+    # big_hilbert = csr_matrix(np.zeros((2 ** num_qubits, 2 ** num_qubits), dtype=complex))
+    big_hilbert = csr_matrix((2 ** num_qubits, 2 ** num_qubits), dtype=complex)
     # left kronecker product corresponds to the correct basis ordering
     for term in pauli_terms.terms:
-
-        tmp_big_hilbert = np.array([1])
+        tmp_big_hilbert = csr_matrix(np.array([1]))
         for index in range(num_qubits):
-            tmp_big_hilbert = np.kron(gate_matrix[term[index]], tmp_big_hilbert)
+            gate_sparse = csr_matrix(gate_matrix[term[index]])
+            tmp_big_hilbert = kron(gate_sparse, tmp_big_hilbert, format='csr')
 
         big_hilbert += tmp_big_hilbert * term.coefficient
 
-    return big_hilbert
+    return np.asarray(big_hilbert.todense())
 
 
 def value_get(param_obj):
