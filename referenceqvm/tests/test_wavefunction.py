@@ -65,7 +65,7 @@ def test_exp_circuit(qvm):
 
     wf, _ = qvm.wavefunction(prog)
     wf = np.reshape(wf.amplitudes, -1)
-    assert np.allclose(wf, true_wf)
+    assert np.allclose(wf.dot(np.conj(wf).T), true_wf.dot(np.conj(true_wf).T))
 
 
 def test_qaoa_circuit(qvm):
