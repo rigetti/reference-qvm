@@ -32,3 +32,5 @@ def test_biased_coin(qvm):
     results = qvm.run_and_measure(prog, qubits=[0], trials=samples)
     coin_bias = sum(map(lambda x: x[0], results)) / float(samples)
     assert np.isclose(coin_bias, 0.25, atol=0.05, rtol=0.05)
+
+

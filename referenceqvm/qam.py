@@ -89,6 +89,7 @@ class QAM(object):
                 invalid = True
                 break
 
+        # NOTE: all_inst is set by the subclass
         if invalid is True and self.all_inst is False:
             raise TypeError("In QVM_Unitary, only Gates and DefGates are "
                             "supported")

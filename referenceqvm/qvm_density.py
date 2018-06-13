@@ -18,16 +18,21 @@
 Pure QVM that only executes pyQuil programs containing Gates, and returns the
 unitary resulting from the program evolution.
 """
+import sys
 import scipy.sparse as sps
-import numpy as np
 
 from pyquil.quil import Program
 from pyquil.quilbase import *
 
-from referenceqvm.unitary_generator import tensor_gates
 from referenceqvm.qam import QAM
 from referenceqvm.unitary_generator import lifted_gate, tensor_gates, value_get
 from referenceqvm.gates import utility_gates
+
+
+def sparse_trace(sparse_matrix):
+    dim = sparse_matrix.shape[0]
+    diagonal = [sparse_matrix[i, i] for i in range(dim)]
+    return np.sum(diagonal)
 
 
 class QVM_Density(QAM):
@@ -57,8 +62,8 @@ class QVM_Density(QAM):
                                           classical_memory=classical_memory,
                                           gate_set=gate_set,
                                           defgate_set=defgate_set)
-        self.density = density
-        self.all_inst = False
+        self._density = density
+        self.all_inst = True
 
     def measurement(self, qubit_index):
         """
@@ -69,7 +74,7 @@ class QVM_Density(QAM):
         """
         measure_0 = lifted_gate(qubit_index, utility_gates['P0'],
                                 self.num_qubits)
-        prob_zero = np.trace(measure_0.dot(self.density))
+        prob_zero = sparse_trace(measure_0.dot(self._density))
         # generate random number to 'roll' for measurement
         if np.random.random() < prob_zero:
             # decohere state using the measure_0 operator
@@ -85,7 +90,6 @@ class QVM_Density(QAM):
 
         return measured_val, unitary
 
-
     def _transition(self, instruction):
         """
         Implements a transition on the density-qvm.
@@ -96,8 +100,8 @@ class QVM_Density(QAM):
             # perform measurement and modify wf in-place
             t_qbit = value_get(instruction.qubit)
             t_cbit = value_get(instruction.classical_reg)
-            measured_val, unitary = self.measurement(t_qbit, psi=None)
-            self.density = np.trace(unitary.dot(self.density))
+            measured_val, unitary = self.measurement(t_qbit)
+            self._density = unitary.dot(self._density).dot(np.conj(unitary.T))
 
             # load measured value into classical bit destination
             self.classical_memory[t_cbit] = measured_val
@@ -106,7 +110,7 @@ class QVM_Density(QAM):
         elif isinstance(instruction, Gate):
             # apply Gate or DefGate
             unitary = tensor_gates(self.gate_set, self.defgate_set, instruction, self.num_qubits)
-            self.density = unitary.dot(self.density).dot(np.conj(unitary).T)
+            self._density = unitary.dot(self._density).dot(np.conj(unitary).T)
             self.program_counter += 1
 
         elif isinstance(instruction, Jump):
@@ -195,7 +199,7 @@ class QVM_Density(QAM):
         """
         pass
 
-     def _post(self, instruction):
+    def _post(self, instruction):
         """
         Post-hook for state-machine execution
 
@@ -235,14 +239,12 @@ class QVM_Density(QAM):
         self.load_program(pyquil_program)
 
         # setup density
-        self.density = np.zeros((2 ** self.num_qubits, 2 ** self.num_qubits),
-                             dtype=complex)
-        self.density[0, 0] = 1.0
-
+        N = 2 ** self.num_qubits
+        self._density = sps.csc_matrix(([1.0], ([0], [0])), shape=(N, N))
         # evolve unitary
         self.kernel()
 
-        return self.density
+        return self._density
 
     def expectation(self, pyquil_program, operator_programs=[Program()]):
         """
@@ -257,5 +259,49 @@ class QVM_Density(QAM):
         :rtype: float
         """
         raise NotImplementedError()
+
+    def run(self, pyquil_program, classical_addresses=None, trials=1):
+        """
+        Run a pyQuil program multiple times, accumulating the values deposited
+        in a list of classical addresses.
+
+        This uses numpy's inverse sampling method to calculate bit string
+        outcomes
+
+        :param Program pyquil_program: A pyQuil program.
+        :param list classical_addresses: A list of classical addresses.
+                                         This is ignored but kept to have
+                                         similar input as Forest QVM.
+        :param int trials: Number of shots to collect.
+
+        :return: A list of lists of bits. Each sublist corresponds to the
+                 values in `classical_addresses`.
+        :rtype: list
+        """
+        results = []
+        for trial in range(trials):
+            _ = self.density(pyquil_program)
+            results.append(self.classical_memory[classical_addresses])
+        return list(results)
+
+    def run_and_measure(self, pyquil_program, trials=1):
+        """
+        Run and measure. converts to run
+
+        :param pyquil_program:
+        :param trials:
+        :return:
+        """
+        density = self.density(pyquil_program)
+        probabilities = [density[i, i].real for i in range(2 ** self.num_qubits)]
+
+        results_as_integers = np.random.choice(2 ** self.num_qubits,
+                                               size=trials,
+                                               p=probabilities)
+
+        results = list(map(lambda x:
+                           list(map(int, np.binary_repr(x, width=self.num_qubits))),
+                           results_as_integers))
+        return results
 
 

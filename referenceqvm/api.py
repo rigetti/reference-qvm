@@ -4,6 +4,7 @@ Sets up the appropriate QVM, and interfacing.
 from referenceqvm.gates import gate_matrix
 from referenceqvm.qvm_wavefunction import QVM_Wavefunction
 from referenceqvm.qvm_unitary import QVM_Unitary
+from referenceqvm.qvm_density import QVM_Density
 
 
 def QVMConnection(type_trans='wavefunction',
@@ -30,6 +31,9 @@ def QVMConnection(type_trans='wavefunction',
 
         elif type_trans == 'unitary':
             qvm = QVM_Unitary(gate_set=gate_set)
+
+        elif type_trans == 'density':
+            qvm = QVM_Density(gate_set=gate_set)
 
         else:
             raise TypeError("{} is not a valid QVM type.".format(type_trans))
