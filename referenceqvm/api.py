@@ -8,7 +8,7 @@ from referenceqvm.qvm_density import QVM_Density
 
 
 def QVMConnection(type_trans='wavefunction',
-                  gate_set=gate_matrix):
+                  gate_set=gate_matrix, noise_model=None):
         """
         Initialize a qvm of a particular type. The type corresponds to the
         type of transition the QVM can perform.
@@ -33,7 +33,7 @@ def QVMConnection(type_trans='wavefunction',
             qvm = QVM_Unitary(gate_set=gate_set)
 
         elif type_trans == 'density':
-            qvm = QVM_Density(gate_set=gate_set)
+            qvm = QVM_Density(gate_set=gate_set, noise_model=noise_model)
 
         else:
             raise TypeError("{} is not a valid QVM type.".format(type_trans))

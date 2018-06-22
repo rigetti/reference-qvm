@@ -226,3 +226,66 @@ gate_matrix = {
     'CZ': CZ
 }
 
+
+# noisy gates
+def relaxation(p):
+    """
+    Return the amplitude damping Kraus operators
+    """
+    k0 = np.array([[1.0, 0.0], [0.0, np.sqrt(1 - p)]])
+    k1 = np.array([[0.0, np.sqrt(p)], [0.0, 0.0]])
+    return [k0, k1]
+
+
+def dephasing(p):
+    """
+    Return the phase damping Kraus operators
+    """
+    k0 = np.eye(2)*np.sqrt(1 - p/2)
+    k1 = np.sqrt(p/2) * Z
+    return [k0, k1]
+
+
+def depolarizing(p):
+    """
+    Return the phase damping Kraus operators
+    """
+    k0 = np.sqrt(1.0 - p)*I
+    k1 = np.sqrt(p/3.0)*X
+    k2 = np.sqrt(p/3.0)*Y
+    k3 = np.sqrt(p/3.0)*Z
+    return [k0, k1, k2, k3]
+
+
+def phase_flip(p):
+    """
+    Return the phase flip kraus operators
+    """
+    k0 = np.sqrt(1 - p)*I
+    k1 = np.sqrt(p)*Z
+    return [k0, k1]
+
+
+def bit_flip(p):
+    """
+    Return the phase flip kraus operators
+    """
+    k0 = np.sqrt(1 - p)*I
+    k1 = np.sqrt(p)*X
+    return [k0, k1]
+
+
+def bitphase_flip(p):
+    """
+    Return the phase flip kraus operators
+    """
+    k0 = np.sqrt(1 - p)*I
+    k1 = np.sqrt(p)*Y
+    return [k0, k1]
+
+noise_gates = {'relaxation': relaxation,
+               'dephasing': dephasing,
+               'depolarizing': depolarizing,
+               'phase_flip': phase_flip,
+               'bit_flip': bit_flip,
+               'bitphase_flip': bitphase_flip}

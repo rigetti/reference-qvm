@@ -19,20 +19,71 @@ Pure QVM that only executes pyQuil programs containing Gates, and returns the
 unitary resulting from the program evolution.
 """
 import sys
+import numpy as np
 import scipy.sparse as sps
 
 from pyquil.quil import Program
-from pyquil.quilbase import *
+from pyquil.quilbase import (Measurement,
+                             UnaryClassicalInstruction,
+                             BinaryClassicalInstruction,
+                             ClassicalTrue,
+                             ClassicalFalse,
+                             ClassicalOr,
+                             ClassicalNot,
+                             ClassicalAnd,
+                             ClassicalExchange,
+                             ClassicalMove,
+                             Jump,
+                             JumpTarget,
+                             JumpConditional,
+                             JumpWhen,
+                             JumpUnless,
+                             Halt, Gate)
 
 from referenceqvm.qam import QAM
 from referenceqvm.unitary_generator import lifted_gate, tensor_gates, value_get
-from referenceqvm.gates import utility_gates
+from referenceqvm.gates import utility_gates, noise_gates
+
+INFINITY = float("inf")
+"Used for infinite coherence times."
 
 
 def sparse_trace(sparse_matrix):
     dim = sparse_matrix.shape[0]
     diagonal = [sparse_matrix[i, i] for i in range(dim)]
     return np.sum(diagonal)
+
+
+class NoiseModel(object):
+
+    def __init__(self, T1=30e-6, T2=30e-6, gate_time_1q=50e-9,
+                 gate_time_2q=150e-09, ro_fidelity=0.95,
+                 depolarizing=None, bitflip=None, phaseflip=None,
+                 bitphaseflip=None):
+        """
+        Generate a noise model
+
+        :param T1: Relaxation time.
+        :param T2: Dephasing time.
+        :param gate_time_1q: 1-qubit gate time.
+        :param gate_time_2q: 2-qubit gate time.
+        :param ro_fidelity:  read-out fidelity (constructs a symmetric readout
+                             confusion matrix>
+        """
+        self.T1 = T1
+        self.T2 = T2
+        self.gate_time_1q = gate_time_1q
+        self.gate_time_2q = gate_time_2q
+        self.gate_time_3q = float(200E-9)
+        self.gate_time_4q = float(200E-9)
+        self.gate_time_5q = float(200E-9)
+        self.ro_fidelity = ro_fidelity
+
+        # alternative error models
+        self.depolarizing = depolarizing
+        self.bitflip = bitflip
+        self.phaseflip = phaseflip
+        self.bitphaseflip = bitphaseflip
 
 
 class QVM_Density(QAM):
@@ -53,7 +104,7 @@ class QVM_Density(QAM):
     """
     def __init__(self, num_qubits=None, program=None, program_counter=None,
                  classical_memory=None, gate_set=None, defgate_set=None,
-                 density=None):
+                 density=None, noise_model=None):
         """
         Subclassed from QAM this is a pure QVM.
         """
@@ -63,6 +114,7 @@ class QVM_Density(QAM):
                                           gate_set=gate_set,
                                           defgate_set=defgate_set)
         self._density = density
+        self.noise_model = noise_model
         self.all_inst = True
 
     def measurement(self, qubit_index):
@@ -197,7 +249,20 @@ class QVM_Density(QAM):
                             state-machine
         :return: None
         """
-        pass
+        if self.noise_model is None:
+            return
+
+        else:
+
+            if isinstance(instruction, Measurement):
+                # perform bitflip with probability associated with ro_fidelity
+                # 1 -  is because we cite fidelity not infidelity
+                ro_prob = 1 - self.noise_model.ro_fidelity
+                bitflip_kraus_ops = noise_gates['bitphase_flip'](ro_prob)
+                for iqubit in range(self.num_qubits):
+                    for kop in bitflip_kraus_ops:
+                        kraus_op = lifted_gate(iqubit, kop, self.num_qubits)
+                        self._density += kraus_op.dot(self._density)
 
     def _post(self, instruction):
         """
@@ -209,7 +274,91 @@ class QVM_Density(QAM):
                             state-machine
         :return: None
         """
-        pass
+        if self.noise_model is None:
+            return
+        else:
+            if self.noise_model.T1 != INFINITY:
+                if isinstance(instruction, Gate):
+                    # perform kraus operator for relaxation
+                    n_qubit_span = len(instruction.get_qubits())
+                    if n_qubit_span == 1:
+                        p = 1.0 - np.exp(-self.noise_model.gate_time_1q/self.noise_model.T1)
+                    elif n_qubit_span == 2:
+                        p = 1.0 - np.exp(-self.noise_model.gate_time_2q/self.noise_model.T1)
+                    else:
+                        # optional to expand to larger number of qubits
+                        p = 1.0 - np.exp(-self.noise_model.gate_time_2q/self.noise_model.T1)
+
+                    if not np.isclose(p, 1.0):
+                        relaxation_ops = noise_gates['relaxation'](p)
+
+                    for i in range(self.num_qubits):
+                        self._density = self.apply_kraus(relaxation_ops, i)
+
+            if self.noise_model.T2 != INFINITY:
+                # perform kraus operator for relaxation
+                n_qubit_span = len(instruction.get_qubits())
+                if n_qubit_span == 1:
+                    p = 1.0 - np.exp(-self.noise_model.gate_time_1q/self.noise_model.T2)
+                elif n_qubit_span == 2:
+                    p = 1.0 - np.exp(-self.noise_model.gate_time_2q/self.noise_model.T2)
+                else:
+                    # optional to expand to larger number of qubits
+                    p = 1.0 - np.exp(-self.noise_model.gate_time_2q/self.noise_model.T2)
+
+                if not np.isclose(p, 1.0):
+                    dephasing_ops = noise_gates['dephasing'](p)
+
+                    for i in range(self.num_qubits):
+                        self._density = self.apply_kraus(dephasing_ops, i)
+
+            if self.noise_model.depolarizing is not None:
+                if not isinstance(self.noise_model.depolarizing, float):
+                    raise TypeError("depolarizing noise value should be None or a float")
+
+                depolarizing_kraus_ops = noise_gates['depolarizing'](self.noise_model.depolarizing)
+
+                for i in range(self.num_qubits):
+                    self._density = self.apply_kraus(depolarizing_kraus_ops, i)
+
+            if self.noise_model.bitflip is not None:
+                if not isinstance(self.noise_model.bitflip, float):
+                    raise TypeError("bitflip noise value should be None or a float")
+
+                bitflip_kraus_ops = noise_gates['bit_flip'](self.noise_model.bitflip)
+                for i in range(self.num_qubits):
+                    self._density = self.apply_kraus(bitflip_kraus_ops, i)
+
+            if self.noise_model.phaseflip is not None:
+                if not isinstance(self.noise_model.phaseflip, float):
+                    raise TypeError("phaseflip noise value should be None or a float")
+
+                phaseflip_kraus_ops = noise_gates['phase_flip'](self.noise_model.phaseflip)
+                for i in range(self.num_qubits):
+                    self._density = self.apply_kraus(phaseflip_kraus_ops, i)
+
+            if self.noise_model.bitphaseflip is not None:
+                if not isinstance(self.noise_model.phaseflip, float):
+                    raise TypeError("bitphaseflip noise value should be None or a float")
+
+                bitphaseflip_kraus_ops = noise_gates['bitphase_flip'](self.noise_model.bitphaseflip)
+                for i in range(self.num_qubits):
+                    self._density = self.apply_kraus(bitphaseflip_kraus_ops, i)
+
+                return
+
+    def apply_kraus(self, operators, index):
+        """
+        Apply Kraus operators to density
+        """
+        output_density = sps.csc_matrix((2**self.num_qubits,
+                                         2**self.num_qubits),
+                                        dtype=complex)
+
+        for op in operators:
+            large_op = sps.csc_matrix(lifted_gate(index, op, self.num_qubits))
+            output_density += large_op.dot(self._density).dot(np.conj(large_op.T))
+        return output_density
 
     def transition(self, instruction):
         """
@@ -237,13 +386,11 @@ class QVM_Density(QAM):
 
         # load program
         self.load_program(pyquil_program)
-
         # setup density
         N = 2 ** self.num_qubits
         self._density = sps.csc_matrix(([1.0], ([0], [0])), shape=(N, N))
         # evolve unitary
         self.kernel()
-
         return self._density
 
     def expectation(self, pyquil_program, operator_programs=[Program()]):

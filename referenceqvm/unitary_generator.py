@@ -21,6 +21,7 @@ space for qubits.
 Note: uses SciPy sparse diagonal (DIA) representation to increase space and
 timeefficiency.
 """
+import numpy as np
 from collections import Sequence
 from numbers import Integral
 
