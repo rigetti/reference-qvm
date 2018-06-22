@@ -21,6 +21,7 @@ space for qubits.
 Note: uses SciPy sparse diagonal (DIA) representation to increase space and
 timeefficiency.
 """
+import numpy as np
 from collections import Sequence
 from numbers import Integral
 
@@ -355,7 +356,6 @@ def tensor_gates(gate_set, defgate_set, pyquil_gate, num_qubits):
         gate = apply_gate(dict_check[pyquil_gate.name],
                           args,
                           num_qubits)
-
     return gate
 
 
