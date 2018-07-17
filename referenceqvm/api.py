@@ -35,6 +35,8 @@ def QVMConnection(type_trans='wavefunction',
         elif type_trans == 'density':
             qvm = QVM_Density(gate_set=gate_set, noise_model=noise_model)
 
+        elif type_trans == 'stabilizer':
+            qvm = QVM_Stabilizer(gate_set=stabilizer_gate_set)
         else:
             raise TypeError("{} is not a valid QVM type.".format(type_trans))
 

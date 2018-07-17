@@ -226,6 +226,16 @@ gate_matrix = {
     'CZ': CZ
 }
 
+stabilizer_gate_matrix = {
+    'I': I,
+    'X': X,
+    'Y': Y,
+    'Z': Z,
+    'H': H,
+    'CNOT': CNOT,
+    'S': S,
+    'CZ': CZ
+}
 
 # noisy gates
 def relaxation(p):
