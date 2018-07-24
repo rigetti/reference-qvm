@@ -27,7 +27,7 @@ def test_many_sample_measurements(qvm):
 
 def test_biased_coin(qvm):
     # sample from a 75% heads and 25% tails coin
-    prog = Program().inst(RX(np.pi / 3)(0))
+    prog = Program().inst(RX(np.pi / 3, 0))
     samples = 1000
     results = qvm.run_and_measure(prog, qubits=[0], trials=samples)
     coin_bias = sum(map(lambda x: x[0], results)) / float(samples)
