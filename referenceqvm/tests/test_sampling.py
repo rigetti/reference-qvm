@@ -36,7 +36,7 @@ def test_sample_bell():
 
 def test_biased_coin():
     # sample from a %75 head and 25% tails coin
-    prog = Program().inst(RX(np.pi/3)(0))
+    prog = Program().inst(RX(np.pi/3, 0))
     qvm = QVMConnection(type_trans='density')
     samples = 100000
     results = qvm.run_and_measure(prog, trials=samples)
