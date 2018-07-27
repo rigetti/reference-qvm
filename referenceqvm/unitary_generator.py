@@ -418,7 +418,9 @@ def value_get(param_obj):
         return param_obj.index
     elif isinstance(param_obj, Addr):
         return param_obj.address
-    elif isinstance(param_obj, Slot):
-        return param_obj.value()
+    # elif isinstance(param_obj, Slot):
+    #     return param_obj.value()
     elif isinstance(param_obj, Label):
         return param_obj.name
+    else:
+        raise TypeError("Object not recognizable")
