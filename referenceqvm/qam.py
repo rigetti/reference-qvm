@@ -18,6 +18,7 @@
 QAM superclass. Implements state machine model, program loading and processing,
 kernel - leaving details of evolution up to subclasses.
 """
+import sys
 import numpy as np
 
 from referenceqvm.unitary_generator import value_get
@@ -85,18 +86,30 @@ class QAM(object):
                 if not (instr.name in self.gate_set.keys() or instr.name in self.defgate_set.keys()):
                     invalid = True
                     break
+            elif isinstance(instr, Measurement):
+                pass
             else:
                 invalid = True
                 break
 
         # NOTE: all_inst is set by the subclass
         if invalid is True and self.all_inst is False:
-            raise TypeError("In QVM_Unitary, only Gates and DefGates are "
-                            "supported")
+            raise TypeError("Some gates used are not allowed in this QAM")
 
         # set internal program and counter to their appropriate values
         self.program = pyquil_program
         self.program_counter = 0
+
+        # setup quantum and classical memory
+        q_max, c_max = self.identify_bits()
+        if c_max <= 512:  # allocate at least 512 cbits (as floor)
+            c_max = 512
+        self.num_qubits = q_max
+        self.classical_memory = np.zeros(c_max).astype(bool)
+
+    def memory_reset(self):
+        if self.program is None:
+            raise TypeError("Program must be loaded to call reset")
 
         # setup quantum and classical memory
         q_max, c_max = self.identify_bits()

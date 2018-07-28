@@ -20,7 +20,7 @@ and return the wavefunction or stabilizer
 """
 import sys
 from functools import reduce
-from pyquil.quil import Program
+from pyquil.quil import Program, get_classical_addresses_from_program
 from pyquil.quilbase import *
 from pyquil.paulis import PauliTerm, sI, sZ, sX, sY
 
@@ -56,11 +56,68 @@ class QVM_Stabilizer(QAM):
                                              classical_memory=classical_memory,
                                              gate_set=gate_set,
                                              defgate_set=defgate_set)
-
+        # this sets that arbitrary instructions are not allowed
+        # this can probably be factored out eventually.  It is a relic of the
+        # the old days of generating unitaries of programs
+        self.all_inst = False
         if num_qubits is None:
             self.tableau = None
         else:
             self.tableau = self._n_qubit_tableau(num_qubits)
+
+    def load_program(self, pyquil_program):
+        """
+        Loads a pyQuil program into the QAM memory.
+            Synthesizes pyQuil program into instruction list.
+            Initializes program object and program counter.
+
+        This overwrites the parent class load program.  Required because
+        unitary check QVM checks makes it annoying to allow measurements.
+        TODO: Change load_program for each qvm-subclass
+
+        :param Program pyquil_program: program to be ran
+        """
+        # typecheck
+        if not isinstance(pyquil_program, Program):
+            raise TypeError("I can only generate from pyQuil programs")
+
+        if self.all_inst is None:
+            raise NotImplementedError("QAM needs to be subclassed in order to "
+                                      "load program")
+
+        # create defgate dictionary
+        defined_gates = {}
+        for dg in pyquil_program.defined_gates:
+            defined_gates[dg.name] = dg.matrix
+        self.defgate_set = defined_gates
+
+        # if QVM_Unitary, check if all instructions are valid.
+        invalid = False
+        for instr in pyquil_program:
+            if isinstance(instr, Gate):
+                if not (instr.name in self.gate_set.keys() or instr.name in self.defgate_set.keys()):
+                    invalid = True
+                    break
+            elif isinstance(instr, Measurement):
+                pass
+            else:
+                invalid = True
+                break
+
+        # NOTE: all_inst is set by the subclass
+        if invalid is True and self.all_inst is False:
+            raise TypeError("Some gates used are not allowed in this QAM")
+
+        # set internal program and counter to their appropriate values
+        self.program = pyquil_program
+        self.program_counter = 0
+
+        # setup quantum and classical memory
+        q_max, c_max = self.identify_bits()
+        if c_max <= 512:  # allocate at least 512 cbits (as floor)
+            c_max = 512
+        self.num_qubits = q_max
+        self.classical_memory = np.zeros(c_max).astype(bool)
 
     def _n_qubit_tableau(self, num_qubits):
         """
@@ -77,17 +134,98 @@ class QVM_Stabilizer(QAM):
             tableau[ii, ii] = 1
         return tableau
 
-    def run(self, pyquil_program):
+    def transition(self, instruction):
         """
-        Run comman
+        Implements a full transition, including pre/post noise hooks.
+
+        :param QuilAction instruction: instruction to be executed
+
+        :return: if program is halted TRUE, else FALSE
+        :rtype: bool int
+        """
+        self.pre()
+        self._transition(instruction)
+        self.post()
+
+        # return HALTED (i.e. program_counter is end of program)
+        return self.program_counter == len(self.program)
+
+    def pre(self):
+        """
+        Pre-transition hook - use for noisy evolution models. Unimplemented for now.
+        """
+        pass
+
+    def post(self):
+        """
+        Post-transition hook - use for noisy evolution models. Unimplemented for now.
+        """
+        pass
+
+    def _transition(self, instruction):
+        """
+        Implements a transition on the generator matrix representing the stabilizers
+
+        :param Gate instruction: QuilAction gate to be implemented
+        """
+        if isinstance(instruction, Measurement):
+            # mutates classical memory!  I should change this...
+            self._apply_measurement(instruction)
+            self.program_counter += 1
+
+        elif isinstance(instruction, Gate):
+            # apply Gate or DefGate
+            if instruction.name == 'H':
+                self._apply_hadamard(instruction)
+            elif instruction.name == 'S':
+                self._apply_phase(instruction)
+            elif instruction.name == 'CNOT':
+                self._apply_cnot(instruction)
+            elif instruction.name == 'I':
+                pass
+            else:
+                raise TypeError("We checked for correct gate types previously" +
+                                " so the impossible has happened!")
+
+            self.program_counter += 1
+
+        elif isinstance(instruction, Jump):
+            # unconditional Jump; go directly to Label
+            self.program_counter = self.find_label(instruction.target)
+
+        elif isinstance(instruction, JumpTarget):
+            # Label; pass straight over
+            self.program_counter += 1
+
+    def run(self, pyquil_program, classical_addresses=None, trials=1):
+        """
+        Run program.
+
+        Loads and checks program if all gates are within the stabilizer set.
+        Then executes program
 
         :param porgram:
+        :param classical_addresses:
+        :param trials:
         :return:
         """
         self.load_program(pyquil_program)
 
-        # set up stabilizers
-        self.tableau = self._n_qubit_tableau(self.num_qubits)
+        if classical_addresses is None:
+            classical_addresses = get_classical_addresses_from_program(pyquil_program)
+
+        results = []
+        for _ in range(trials):
+            # set up stabilizers
+            self.tableau = self._n_qubit_tableau(self.num_qubits)
+            self.kernel()
+            results.append(list(map(int, self.classical_memory[classical_addresses])))
+
+            # reset qvm
+            self.memory_reset()
+            self.program_counter = 0
+
+        return results
 
     def stabilizer_tableau(self):
         """
@@ -145,7 +283,6 @@ class QVM_Stabilizer(QAM):
                                                 self.tableau[i, self.num_qubits + j],
                                                 self.tableau[h, j],
                                                 self.tableau[h, self.num_qubits + j])
-
         phase_accumulator += 2 * self.tableau[h, -1]
         phase_accumulator += 2 * self.tableau[i, -1]
         return phase_accumulator % 4
@@ -244,8 +381,9 @@ class QVM_Stabilizer(QAM):
         t_qbit = value_get(instruction.qubit)
         t_cbit = value_get(instruction.classical_reg)
 
-        print(self.tableau)
-        check_xpa = False # check if x_pa = 1 for p in {n + 1 ... 2 n} of tableau
+        # check if the output of the measurement is random
+        # this is analogous to the case when the measurement operator does not
+        # commute with at least one stabilizer
         if any(self.tableau[self.num_qubits:, t_qbit] == 1):
             # find the first one.
             xpa_idx = np.where(self.tableau[self.num_qubits:, t_qbit] == 1)[0][0]  # take the first index
@@ -253,56 +391,42 @@ class QVM_Stabilizer(QAM):
             for ii in range(2 * self.num_qubits):  # loop over each row and call rowsum(ii, xpa_idx)
                 if ii != xpa_idx and self.tableau[ii, t_qbit] == 1:
                     self._rowsum(ii, xpa_idx)
+
+            # moving the operator into the destabilizer and then replacing with
+            # the measurement operator
             self.tableau[xpa_idx - self.num_qubits, :] = self.tableau[xpa_idx, :]
 
+            # this is like replacing the non-commuting element with the measurement operator
             self.tableau[xpa_idx, :] = np.zeros((1, 2 * self.num_qubits + 1))
             self.tableau[xpa_idx, t_qbit + self.num_qubits] = 1
+
             # perform the measurement
             self.tableau[xpa_idx, -1] = 1 if np.random.random() > 0.5 else 0
 
             # set classical results to return
             self.classical_memory[t_cbit] = self.tableau[xpa_idx, -1]
 
+        # outcome of measurement is deterministic...need to determine sign
         else:
             # augment tableaue with a scratch space
-            self.tableau = np.vstack((self.tableau, np.zeros((1, 2 * self.num_qubits + 1))))
+            self.tableau = np.vstack((self.tableau, np.zeros((1, 2 * self.num_qubits + 1), dtype=int)))
             for ii in range(self.num_qubits):
-                self._rowsum(2 * self.num_qubits + 1, ii)
+                # We need to check if R(i) anticommutes with Za...which it does if x_{ia} = 1
+                if self.tableau[ii, t_qbit] == 1:  # refrencing the destabilizers
+
+                    # check something silly.  Does the destabilizer anticommute with the observable?  It SHOULD!
+                    tmp_vector_representing_z_qubit = np.zeros((2 * self.num_qubits), dtype=int)
+                    tmp_vector_representing_z_qubit[t_qbit] = 1
+                    assert symplectic_inner_product(tmp_vector_representing_z_qubit, self.tableau[ii, :-1]) == 1
+
+                    # row sum on the stabilizers (summing up operators such that we get operator Z_{a})
+                    self._rowsum(2 * self.num_qubits, ii + self.num_qubits)  # note: A-G says 2 n + 1...this is correct...but they start counting at 1 not zero
 
             # set the classical bit to be the last element of the scratch row
             self.classical_memory[t_cbit] = self.tableau[-1, -1]
 
             # remove the scratch space
             self.tableau = self.tableau[:2 * self.num_qubits, :]
-
-    def transition(self, instruction):
-        """
-        Implements a transition on the generator matrix representing the stabilizers
-
-        :param Gate instruction: QuilAction gate to be implemented
-        """
-        if isinstance(instruction, Measurement):
-            # mutates classical memory!  I should change this...
-            self._apply_measurement(instruction)
-            self.program_counter += 1
-
-        elif isinstance(instruction, Gate):
-            # apply Gate or DefGate
-            if Gate.name == 'H':
-                self._apply_hadamard(instruction)
-            elif Gate.name == 'S':
-                self._apply_phase(instruction)
-            elif Gate.name == 'CNOT':
-                self._apply_cnot(instruction)
-            self.program_counter += 1
-
-        elif isinstance(instruction, Jump):
-            # unconditional Jump; go directly to Label
-            self.program_counter = self.find_label(instruction.target)
-
-        elif isinstance(instruction, JumpTarget):
-            # Label; pass straight over
-            self.program_counter += 1
 
 
 def pauli_stabilizer_to_binary_stabilizer(stabilizer_list):
@@ -412,6 +536,25 @@ def binary_rref(code_matrix):
         # print("semi rref at row {}".format(ridx))
         # print(code_matrix)
     return code_matrix
+
+
+def symplectic_inner_product(vector1, vector2):
+    """
+    Operators commute if their binary form symplectic inner product is zero
+
+    Operators anticommute if their binary form symplectic inner product is one
+
+    :param vector1: binary form of operator with no sign info
+    :param vector2: binary form of a pauli operator with no sign info
+    :return: 0, 1
+    """
+    if vector1.shape != vector2.shape:
+        raise ValueError("vectors must be the same size.")
+
+    # TODO: add a check for binary or integer linear arrays
+
+    hadamard_product = np.multiply(vector1, vector2)
+    return reduce(lambda x, y: x ^ y, hadamard_product)
 
 
 if __name__ == "__main__":

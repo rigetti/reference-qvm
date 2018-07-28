@@ -7,7 +7,7 @@ from itertools import product
 from functools import reduce
 from pyquil.paulis import sI, sX, sY, sZ, PAULI_COEFF, PAULI_OPS
 from pyquil.quil import Program
-from pyquil.gates import H, S, CNOT
+from pyquil.gates import H, S, CNOT, I
 from referenceqvm.qvm_stabilizer import (QVM_Stabilizer, pauli_stabilizer_to_binary_stabilizer,
                                          binary_stabilizer_to_pauli_stabilizer)
 from referenceqvm.unitary_generator import value_get
@@ -183,7 +183,12 @@ def test_rowsum_full():
         pauli_terms = []
         for _ in range(num_qubits):
             pauli_terms.append(reduce(lambda x, y: x * y, [pauli_subgroup[x](idx) for idx, x in enumerate(np.random.randint(1, 4, num_qubits))]))
-        stab_mat = pauli_stabilizer_to_binary_stabilizer(pauli_terms)
+        try:
+            stab_mat = pauli_stabilizer_to_binary_stabilizer(pauli_terms)
+        except:
+            # we have to do this because I'm not strictly making valid n-qubit
+            # stabilizers
+            continue
         qvmstab = QVM_Stabilizer(num_qubits=num_qubits)
         qvmstab.tableau[num_qubits:, :] = stab_mat
         p_on_i = qvmstab._rowsum_phase_accumulator(num_qubits, num_qubits + 1)
@@ -191,8 +196,10 @@ def test_rowsum_full():
             coeff_test = pauli_terms[1] * pauli_terms[0]
             assert np.isclose(coeff_test.coefficient, (1j) ** p_on_i)
             qvmstab._rowsum(num_qubits, num_qubits + 1)
-
-            pauli_op = binary_stabilizer_to_pauli_stabilizer(qvmstab.tableau[[num_qubits], :])[0]
+            try:
+                pauli_op = binary_stabilizer_to_pauli_stabilizer(qvmstab.tableau[[num_qubits], :])[0]
+            except:
+                continue
             true_pauli_op = pauli_terms[1] * pauli_terms[0]
             assert pauli_op == true_pauli_op
 
@@ -270,14 +277,54 @@ def test_simulation_cnot():
         assert term == true_stabilizers[idx]
 
 
-def test_measurement():
+def test_measurement_noncommuting():
     """
     Test measurements of stabilizer state from tableau
+
+    This tests the non-commuting measurement operator
     """
     # generate bell state then measure each qubit sequentially
-    prog = Program().inst([H(0), CNOT(0, 1)]).measure(0, 0).measure(1, 1)
+    prog = Program().inst(H(0)).measure(0, 0)
     qvmstab = QVM_Stabilizer()
-    qvmstab.run(prog)
+    results = qvmstab.run(prog, trials=5000)
+    assert np.isclose(np.mean(results), 0.5, rtol=0.1)
+
+
+def test_measurement_commuting():
+    """
+    Test measuremt of stabilzier state from tableau
+
+    This tests when the measurement operator commutes with the stabilizers
+
+    To test we will first test draw's from a blank stabilizer and then with X
+    """
+    identity_program = Program().inst([I(0)]).measure(0, 0)
+    qvmstab = QVM_Stabilizer()
+    results = qvmstab.run(identity_program, trials=1000)
+    assert all(np.array(results) == 0)
+
+
+def test_measurement_commuting_result_one():
+    """
+    Test measuremt of stabilzier state from tableau
+
+    This tests when the measurement operator commutes with the stabilizers
+
+    This time we will generate the stabilizer -Z|1> = |1> so we we need to do
+    a bitflip...not just identity.  A Bitflip is HSSH = X
+    """
+    identity_program = Program().inst([H(0), S(0), S(0), H(0)]).measure(0, 0)
+    qvmstab = QVM_Stabilizer()
+    results = qvmstab.run(identity_program, trials=1000)
+    assert all(np.array(results) == 1)
+
+
+def test_bell_state_measurements():
+    prog = Program().inst(H(0), CNOT(0, 1)).measure(0, 0).measure(1, 1)
+    qvmstab = QVM_Stabilizer()
+    results = qvmstab.run(prog, trials=5000)
+    assert np.isclose(np.mean(results), 0.5, rtol=0.1)
+
 
 if __name__ == "__main__":
     test_initialization()
@@ -288,4 +335,7 @@ if __name__ == "__main__":
     test_simulation_hadamard()
     test_simulation_phase()
     test_simulation_cnot()
-    test_measurement()
+    test_measurement_noncommuting()
+    test_measurement_commuting()
+    test_measurement_commuting_result_one()
+    test_bell_state_measurements()
