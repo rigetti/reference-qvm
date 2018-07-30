@@ -39,11 +39,11 @@ def test_qaoa_unitary(qvm_unitary):
                0.50000000 - 4.99997185e-01*1j, 0.00167784 + 1.00210180e-05*1j]
 
     prog = Program()
-    prog.inst([RY(np.pi/2)(0), RX(np.pi)(0),
-               RY(np.pi/2)(1), RX(np.pi)(1),
-               CNOT(0, 1), RX(-np.pi/2)(1), RY(4.71572463191)(1),
-               RX(np.pi/2)(1), CNOT(0, 1),
-               RX(-2*2.74973750579)(0), RX(-2*2.74973750579)(1)])
+    prog.inst([RY(np.pi/2, 0), RX(np.pi, 0),
+               RY(np.pi/2, 1), RX(np.pi, 1),
+               CNOT(0, 1), RX(-np.pi/2, 1), RY(4.71572463191, 1),
+               RX(np.pi/2, 1), CNOT(0, 1),
+               RX(-2*2.74973750579, 0), RX(-2*2.74973750579, 1)])
 
     test_unitary = qvm_unitary.unitary(prog)
     wf_test = np.zeros(4)
