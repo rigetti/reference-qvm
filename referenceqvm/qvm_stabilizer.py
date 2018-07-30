@@ -16,7 +16,8 @@
 ##############################################################################
 """
 Pure QVM that only executes pyQuil programs containing Clifford group generators,
-and return the wavefunction or stabilizer
+and return the wavefunction or stabilizer.  This is based off of the paper by
+Aaronson and Gottesman Phys. Rev. A 70, 052328
 """
 import sys
 from functools import reduce
@@ -26,7 +27,7 @@ from pyquil.paulis import PauliTerm, sI, sZ, sX, sY
 
 from referenceqvm.qam import QAM
 from referenceqvm.gates import stabilizer_gate_matrix
-from referenceqvm.unitary_generator import value_get
+from referenceqvm.unitary_generator import value_get, tensor_up
 
 
 class QVM_Stabilizer(QAM):
@@ -226,6 +227,25 @@ class QVM_Stabilizer(QAM):
             self.program_counter = 0
 
         return results
+
+    def density(self, pyquil_program):
+        """
+        Run program and compute the density matrix
+
+        Loads and checks program if all gates are within the stabilizer set.
+        Then executes program
+
+        :param porgram:
+        :return:
+        """
+        self.load_program(pyquil_program)
+        self.tableau = self._n_qubit_tableau(self.num_qubits)
+        self.kernel()
+        stabilizers = binary_stabilizer_to_pauli_stabilizer(self.stabilizer_tableau())
+        pauli_ops = reduce(lambda x, y: x * (1 + y), stabilizers)
+        pauli_ops *= (2 ** (-self.num_qubits))
+
+        return tensor_up(pauli_ops, self.num_qubits)
 
     def stabilizer_tableau(self):
         """
@@ -427,6 +447,7 @@ class QVM_Stabilizer(QAM):
 
             # remove the scratch space
             self.tableau = self.tableau[:2 * self.num_qubits, :]
+
 
 
 def pauli_stabilizer_to_binary_stabilizer(stabilizer_list):
