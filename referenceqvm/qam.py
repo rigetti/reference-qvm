@@ -86,8 +86,6 @@ class QAM(object):
                 if not (instr.name in self.gate_set.keys() or instr.name in self.defgate_set.keys()):
                     invalid = True
                     break
-            elif isinstance(instr, Measurement):
-                pass
             else:
                 invalid = True
                 break

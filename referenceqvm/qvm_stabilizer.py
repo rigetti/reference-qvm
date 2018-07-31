@@ -20,14 +20,17 @@ and return the wavefunction or stabilizer.  This is based off of the paper by
 Aaronson and Gottesman Phys. Rev. A 70, 052328
 """
 import sys
+import numpy as np
 from functools import reduce
 from pyquil.quil import Program, get_classical_addresses_from_program
 from pyquil.quilbase import *
 from pyquil.paulis import PauliTerm, sI, sZ, sX, sY
+from pyquil.wavefunction import Wavefunction
 
 from referenceqvm.qam import QAM
 from referenceqvm.gates import stabilizer_gate_matrix
 from referenceqvm.unitary_generator import value_get, tensor_up
+from referenceqvm.state_actions import project_stabilized_state
 
 
 class QVM_Stabilizer(QAM):
@@ -242,10 +245,26 @@ class QVM_Stabilizer(QAM):
         self.tableau = self._n_qubit_tableau(self.num_qubits)
         self.kernel()
         stabilizers = binary_stabilizer_to_pauli_stabilizer(self.stabilizer_tableau())
-        pauli_ops = reduce(lambda x, y: x * (1 + y), stabilizers)
-        pauli_ops *= (2 ** (-self.num_qubits))
-
+        pauli_ops = list(map(lambda x: 0.5 * (sI(0) + x), stabilizers))
+        pauli_ops = reduce(lambda x, y: x * y, pauli_ops)
         return tensor_up(pauli_ops, self.num_qubits)
+
+    def wavefunction(self, program):
+        """
+        Simulate the stabilizer program and then project out the final state.
+
+        Return the final state as a wavefunction pyquil object
+
+        :param program: pyQuil program composed of stabilizer operations only
+        :return: pyquil.Wavefunction.wavefunction object.
+        """
+        self.load_program(program)
+        self.tableau = self._n_qubit_tableau(self.num_qubits)
+        self.kernel()
+        stabilizers = binary_stabilizer_to_pauli_stabilizer(self.stabilizer_tableau())
+        stabilizer_state = project_stabilized_state(stabilizers)
+        stabilizer_state = np.array(stabilizer_state.todense())  # todense() returns a matrixlib type
+        return Wavefunction(stabilizer_state.flatten())
 
     def stabilizer_tableau(self):
         """
@@ -355,7 +374,7 @@ class QVM_Stabilizer(QAM):
 
         :param instruction: pyquil abstract instruction.  Must have
         """
-        a, b = list(instruction.get_qubits())  # control (a) and target (b)
+        a, b = [value_get(x) for x in instruction.qubits]
         for i in range(2 * self.num_qubits):
             self.tableau[i, -1] = self._cnot_phase_update(i, a, b)
             self.tableau[i, b] = self.tableau[i, b] ^ self.tableau[i, a]
@@ -380,7 +399,7 @@ class QVM_Stabilizer(QAM):
         :param instruction:
         :return:
         """
-        qubit_label = list(instruction.get_qubits())[0]
+        qubit_label = [value_get(x) for x in instruction.qubits][0]
         for i in range(2 * self.num_qubits):
             self.tableau[i, -1] = self.tableau[i, -1] ^ (self.tableau[i, qubit_label] * self.tableau[i, qubit_label + self.num_qubits])
             self.tableau[i, [qubit_label, qubit_label + self.num_qubits]] = self.tableau[i, [qubit_label + self.num_qubits, qubit_label]]
@@ -392,7 +411,7 @@ class QVM_Stabilizer(QAM):
         :param instruction:
         :return:
         """
-        qubit_label = list(instruction.get_qubits())[0]
+        qubit_label = [value_get(x) for x in instruction.qubits][0]
         for i in range(2 * self.num_qubits):
             self.tableau[i, -1] = self.tableau[i, -1] ^ (self.tableau[i, qubit_label] * self.tableau[i, qubit_label + self.num_qubits])
             self.tableau[i, qubit_label + self.num_qubits] = self.tableau[i, qubit_label + self.num_qubits] ^ self.tableau[i, qubit_label]

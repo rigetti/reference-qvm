@@ -9,6 +9,7 @@ pyquil.
 
 Given
 """
+import sys
 from scipy.sparse import csc_matrix
 import numpy as np
 from pyquil.paulis import PauliTerm
@@ -89,27 +90,44 @@ def state_family_generator(state, pauli_operator):
         bitstring = list(map(int, np.binary_repr(ridx, width=num_qubits)))[::-1]
         new_ket, new_coefficient = compute_action(bitstring, pauli_operator, num_qubits)
         new_indices.append(int("".join([str(x) for x in new_ket[::-1]]), 2))
-        new_coeffs.append(state[ridx, cidx] * new_coefficient)
+        new_coeffs.append(state[ridx, cidx] * new_coefficient * pauli_operator.coefficient)
 
     return csc_matrix((new_coeffs, (new_indices, [0] * len(new_indices))),
                       shape=(2 ** num_qubits, 1), dtype=complex)
 
 
-def project_stabilized_state(stabilizer_list, num_qubits=None):
+def project_stabilized_state(stabilizer_list, num_qubits=None,
+                             classical_state=None):
     """
     Project out the state stabilized by the stabilizer matrix
 
     |psi> = (1/2^{n}) * Product_{i=0}{n-1}[ 1 + G_{i}] |vac>
 
     :param stabilizer_list:
-    :return:
+    :param num_qubits: integer number of qubits
+    :param classical_state: Default None.  Defaults to |+>^{otimes n}
+
+    :return: state projected by stabilizers
     """
     if num_qubits is None:
         num_qubits = len(stabilizer_list)
 
-    indptr = np.array([0])
-    indices = np.array([0])
-    data = np.array([1])
+    if classical_state is None:
+        indptr = np.array([0] * (2 ** num_qubits))
+        indices = np.arange(2 ** num_qubits)
+        data = np.ones((2 ** num_qubits)) / np.sqrt((2 ** num_qubits))
+    else:
+        if not isinstance(classical_state, list):
+            raise TypeError("I only accept lists as the classical state")
+        if len(classical_state) != num_qubits:
+            raise TypeError("Classical state does not match the number of qubits")
+
+        # convert into an integer
+        ket_idx = int("".join([str(x) for x in classical_state[::-1]]), 2)
+        indptr = np.array([0])
+        indices = np.array([ket_idx])
+        data = np.array([1.])
+
     state = csc_matrix((data, (indices, indptr)), shape=(2 ** num_qubits, 1),
                        dtype=complex)
 

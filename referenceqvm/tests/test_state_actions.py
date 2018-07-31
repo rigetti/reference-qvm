@@ -260,9 +260,9 @@ def test_stabilizer_projection_ZZZ():
     test if we project out the correct state
     """
     stabilizer_state = project_stabilized_state([sZ(0) * sZ(1), sZ(1) * sZ(2),
-                                                 sX(0) * sX(1) * sX(2)])
+                                                     sX(0) * sX(1) * sX(2)])
     true_state = np.zeros((8, 1))
     true_state[0, 0] = true_state[7, 0] = 1
     true_state /= np.sqrt(2)
-    assert np.allclose(true_state, stabilizer_state.todense())
+    assert np.allclose(true_state, np.array(stabilizer_state.todense()))
 

@@ -10,7 +10,9 @@ from pyquil.quil import Program
 from pyquil.gates import H, S, CNOT, I
 from referenceqvm.qvm_stabilizer import (QVM_Stabilizer, pauli_stabilizer_to_binary_stabilizer,
                                          binary_stabilizer_to_pauli_stabilizer)
-from referenceqvm.unitary_generator import value_get
+from referenceqvm.state_actions import project_stabilized_state
+from referenceqvm.api import QVMConnection
+
 
 pauli_subgroup = [sI, sX, sY, sZ]
 five_qubit_code_generators = [sX(0) * sZ(1) * sZ(2) * sX(3) * sI(4),
@@ -245,18 +247,40 @@ def test_simulation_hadamard():
                              [0, 1, 0, 0, 0]])
     assert np.allclose(x_stabilizer, qvmstab.tableau)
 
+    prog = Program().inst([H(0), H(1), H(0), H(1)])
+    qvmstab = QVM_Stabilizer(num_qubits=2)
+    qvmstab._apply_hadamard(prog.instructions[0])
+    qvmstab._apply_hadamard(prog.instructions[1])
+    qvmstab._apply_hadamard(prog.instructions[2])
+    qvmstab._apply_hadamard(prog.instructions[3])
+    x_stabilizer = np.array([[1, 0, 0, 0, 0],
+                             [0, 1, 0, 0, 0],
+                             [0, 0, 1, 0, 0],
+                             [0, 0, 0, 1, 0]])
+    assert np.allclose(x_stabilizer, qvmstab.tableau)
+
 
 def test_simulation_phase():
     """
     Test if the Phase gate is applied correctly to the tableau
 
     S|0> = |0>
+
+    S|+> = |R>
     """
     prog = Program().inst(S(0))
     qvmstab = QVM_Stabilizer(num_qubits=1)
     qvmstab._apply_phase(prog.instructions[0])
     true_stab = np.array([[1, 1, 0],
                           [0, 1, 0]])
+    assert np.allclose(true_stab, qvmstab.tableau)
+
+    prog = Program().inst([H(0), S(0)])
+    qvmstab = QVM_Stabilizer(num_qubits=1)
+    qvmstab._apply_hadamard(prog.instructions[0])
+    qvmstab._apply_phase(prog.instructions[1])
+    true_stab = np.array([[0, 1, 0],
+                          [1, 1, 0]])
     assert np.allclose(true_stab, qvmstab.tableau)
 
 
@@ -275,6 +299,41 @@ def test_simulation_cnot():
     test_paulis = binary_stabilizer_to_pauli_stabilizer(qvmstab.tableau[2:, :])
     for idx, term in enumerate(test_paulis):
         assert term == true_stabilizers[idx]
+
+    # test that CNOT does nothing to |00> state
+    prog = Program().inst([CNOT(0, 1)])
+    qvmstab = QVM_Stabilizer(num_qubits=2)
+    qvmstab._apply_cnot(prog.instructions[0])
+    true_tableau = np.array([[1, 1, 0, 0, 0],   # X1 -> X1 X2
+                             [0, 1, 0, 0, 0],   # X2 -> X2
+                             [0, 0, 1, 0, 0],   # Z1 -> Z1
+                             [0, 0, 1, 1, 0]])  # Z2 -> Z1 Z2
+
+    # note that Z1, Z1 Z2 still stabilizees |00>
+    assert np.allclose(true_tableau, qvmstab.tableau)
+
+
+    # test that CNOT produces 11 state after X
+    prog = Program().inst([H(0), S(0), S(0), H(0), CNOT(0, 1)])
+    qvmstab = QVM_Stabilizer(num_qubits=2)
+    qvmstab._apply_hadamard(prog.instructions[0])
+    qvmstab._apply_phase(prog.instructions[1])
+    qvmstab._apply_phase(prog.instructions[2])
+    qvmstab._apply_hadamard(prog.instructions[3])
+    qvmstab._apply_cnot(prog.instructions[4])
+    true_tableau = np.array([[1, 1, 0, 0, 0],
+                             [0, 1, 0, 0, 0],
+                             [0, 0, 1, 0, 1],
+                             [0, 0, 1, 1, 0]])
+
+    # note that -Z1, Z1 Z2 still stabilizees |11>
+    assert np.allclose(true_tableau, qvmstab.tableau)
+
+    test_paulis = binary_stabilizer_to_pauli_stabilizer(qvmstab.stabilizer_tableau())
+    state = project_stabilized_state(test_paulis, qvmstab.num_qubits, classical_state=[1, 1])
+    state_2 = project_stabilized_state(test_paulis, qvmstab.num_qubits)
+
+    assert np.allclose(np.array(state.todense()), np.array(state_2.todense()))
 
 
 def test_measurement_noncommuting():
@@ -324,18 +383,57 @@ def test_bell_state_measurements():
     qvmstab = QVM_Stabilizer()
     results = qvmstab.run(prog, trials=5000)
     assert np.isclose(np.mean(results), 0.5, rtol=0.1)
+    assert all([x[0] == x[1] for x in results])
+
+
+def test_random_stabilizer_circuit():
+    """
+    Generate a random stabilizer circuit from {CNOT, H, S, MEASURE}
+
+    Compare the outcome to full state evolution
+    """
+    num_qubits = 2
+    # for each qubit pick a set of operations
+    gate_operations = {1: H, 2: S, 3: CNOT}
+    np.random.seed(42)
+    num_gates = 1000 # program has 100 gates in it
+
+    prog = Program()
+    for _ in range(num_gates):
+        for jj in range(num_qubits):
+            instruction_idx = np.random.randint(1, 4)
+            if instruction_idx == 3:
+                gate = gate_operations[instruction_idx](jj, (jj + 1) % num_qubits)
+            else:
+                gate = gate_operations[instruction_idx](jj)
+            prog.inst(gate)
+
+    qvmstab = QVM_Stabilizer()
+    wf = qvmstab.wavefunction(prog)
+    wf = wf.amplitudes.reshape((-1, 1))
+    rho_trial = wf.dot(np.conj(wf.T))
+
+    qvm = QVMConnection(type_trans='wavefunction')
+    rho, _ = qvm.wavefunction(prog)
+    rho = rho.amplitudes.reshape((-1, 1))
+    rho_true = rho.dot(np.conj(rho.T))
+    assert np.allclose(rho_true, rho_trial)
+
+    rho_from_stab = qvmstab.density(prog)
+    assert np.allclose(rho_from_stab, rho_true)
 
 
 if __name__ == "__main__":
-    test_initialization()
-    test_row_sum_sub_algorithm_g_test()
-    test_stabilizer_to_matrix_conversion()
-    test_rowsum_phase_accumulator()
-    test_rowsum_full()
-    test_simulation_hadamard()
-    test_simulation_phase()
-    test_simulation_cnot()
-    test_measurement_noncommuting()
-    test_measurement_commuting()
-    test_measurement_commuting_result_one()
-    test_bell_state_measurements()
+    # test_initialization()
+    # test_row_sum_sub_algorithm_g_test()
+    # test_stabilizer_to_matrix_conversion()
+    # test_rowsum_phase_accumulator()
+    # test_rowsum_full()
+    # test_simulation_hadamard()
+    # test_simulation_phase()
+    # test_simulation_cnot()
+    # test_measurement_noncommuting()
+    # test_measurement_commuting()
+    # test_measurement_commuting_result_one()
+    # test_bell_state_measurements()
+    test_random_stabilizer_circuit()
