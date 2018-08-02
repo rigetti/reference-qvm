@@ -21,7 +21,6 @@ space for qubits.
 Note: uses SciPy sparse diagonal (DIA) representation to increase space and
 timeefficiency.
 """
-import numpy as np
 from collections import Sequence
 from numbers import Integral
 
@@ -418,8 +417,6 @@ def value_get(param_obj):
         return param_obj.index
     elif isinstance(param_obj, Addr):
         return param_obj.address
-    # elif isinstance(param_obj, Slot):
-    #     return param_obj.value()
     elif isinstance(param_obj, Label):
         return param_obj.name
     else:
