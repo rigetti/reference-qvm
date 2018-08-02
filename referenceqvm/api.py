@@ -1,10 +1,11 @@
 """
 Sets up the appropriate QVM, and interfacing.
 """
-from referenceqvm.gates import gate_matrix
+from referenceqvm.gates import gate_matrix, stabilizer_gate_matrix
 from referenceqvm.qvm_wavefunction import QVM_Wavefunction
 from referenceqvm.qvm_unitary import QVM_Unitary
 from referenceqvm.qvm_density import QVM_Density
+from referenceqvm.qvm_stabilizer import QVM_Stabilizer
 
 
 def QVMConnection(type_trans='wavefunction',
@@ -36,7 +37,7 @@ def QVMConnection(type_trans='wavefunction',
             qvm = QVM_Density(gate_set=gate_set, noise_model=noise_model)
 
         elif type_trans == 'stabilizer':
-            qvm = QVM_Stabilizer(gate_set=stabilizer_gate_set)
+            qvm = QVM_Stabilizer(gate_set=stabilizer_gate_matrix)
         else:
             raise TypeError("{} is not a valid QVM type.".format(type_trans))
 
