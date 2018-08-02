@@ -8,9 +8,10 @@ from functools import reduce
 from pyquil.paulis import sI, sX, sY, sZ, PAULI_COEFF, PAULI_OPS
 from pyquil.quil import Program
 from pyquil.gates import H, S, CNOT, I
-from referenceqvm.qvm_stabilizer import (QVM_Stabilizer, pauli_stabilizer_to_binary_stabilizer,
-                                         binary_stabilizer_to_pauli_stabilizer)
-from referenceqvm.state_actions import project_stabilized_state
+from referenceqvm.qvm_stabilizer import QVM_Stabilizer
+from referenceqvm.stabilizer_utils import (pauli_stabilizer_to_binary_stabilizer,
+                                           binary_stabilizer_to_pauli_stabilizer)
+from referenceqvm.stabilizer_utils import project_stabilized_state
 from referenceqvm.api import QVMConnection
 
 
@@ -41,30 +42,6 @@ def test_initialization():
 
     initial_tableau = np.hstack((np.eye(2 * num_qubits), np.zeros((2 * num_qubits, 1))))
     assert np.allclose(initial_tableau, qvmstab.tableau)
-
-
-def test_stabilizer_to_matrix_conversion():
-    # bitflip code
-    stabilizer_matrix = pauli_stabilizer_to_binary_stabilizer(bell_stabilizer)
-    true_stabilizer_matrix = np.array([[0, 0, 1, 1, 0],
-                                       [1, 1, 0, 0, 0]])
-    assert np.allclose(true_stabilizer_matrix, stabilizer_matrix)
-
-    test_stabilizer_list = binary_stabilizer_to_pauli_stabilizer(true_stabilizer_matrix)
-    for idx, term in enumerate(test_stabilizer_list):
-        assert term == bell_stabilizer[idx]
-
-    #  given some codes convert them to code matrices
-    stabilizer_matrix = pauli_stabilizer_to_binary_stabilizer(five_qubit_code_generators)
-    true_stabilizer_matrix = np.array([[1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0],
-                                      [0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0],
-                                      [1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
-                                      [0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0]])
-    assert np.allclose(true_stabilizer_matrix, stabilizer_matrix)
-
-    test_stabilizer_list = binary_stabilizer_to_pauli_stabilizer(true_stabilizer_matrix)
-    for idx, term in enumerate(test_stabilizer_list):
-        assert term == five_qubit_code_generators[idx]
 
 
 def test_row_sum_sub_algorithm_g_test():
@@ -421,19 +398,3 @@ def test_random_stabilizer_circuit():
 
     rho_from_stab = qvmstab.density(prog)
     assert np.allclose(rho_from_stab, rho_true)
-
-
-if __name__ == "__main__":
-    # test_initialization()
-    # test_row_sum_sub_algorithm_g_test()
-    # test_stabilizer_to_matrix_conversion()
-    # test_rowsum_phase_accumulator()
-    # test_rowsum_full()
-    # test_simulation_hadamard()
-    # test_simulation_phase()
-    # test_simulation_cnot()
-    # test_measurement_noncommuting()
-    # test_measurement_commuting()
-    # test_measurement_commuting_result_one()
-    # test_bell_state_measurements()
-    test_random_stabilizer_circuit()

@@ -3,8 +3,11 @@ Test the infrastructure for building a state by projection onto the +1
 eigenspace of a set of generators or stabilizers
 """
 import numpy as np
-from referenceqvm.state_actions import compute_action, project_stabilized_state
-from referenceqvm.tests.test_stabilzier_qvm import five_qubit_code_generators
+from referenceqvm.stabilizer_utils import (compute_action, project_stabilized_state,
+                                           binary_stabilizer_to_pauli_stabilizer,
+                                           pauli_stabilizer_to_binary_stabilizer)
+from referenceqvm.tests.test_stabilizer_qvm import (five_qubit_code_generators,
+                                                    bell_stabilizer)
 from pyquil.paulis import sX, sZ, sY, sI, PauliSum
 import pytest
 
@@ -27,6 +30,30 @@ def test_compute_action_type_checks():
 
     with pytest.raises(TypeError):
         compute_action('0001', sX(0), 4)
+
+
+def test_stabilizer_to_matrix_conversion():
+    # bitflip code
+    stabilizer_matrix = pauli_stabilizer_to_binary_stabilizer(bell_stabilizer)
+    true_stabilizer_matrix = np.array([[0, 0, 1, 1, 0],
+                                       [1, 1, 0, 0, 0]])
+    assert np.allclose(true_stabilizer_matrix, stabilizer_matrix)
+
+    test_stabilizer_list = binary_stabilizer_to_pauli_stabilizer(true_stabilizer_matrix)
+    for idx, term in enumerate(test_stabilizer_list):
+        assert term == bell_stabilizer[idx]
+
+    #  given some codes convert them to code matrices
+    stabilizer_matrix = pauli_stabilizer_to_binary_stabilizer(five_qubit_code_generators)
+    true_stabilizer_matrix = np.array([[1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0],
+                                      [0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0],
+                                      [1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+                                      [0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0]])
+    assert np.allclose(true_stabilizer_matrix, stabilizer_matrix)
+
+    test_stabilizer_list = binary_stabilizer_to_pauli_stabilizer(true_stabilizer_matrix)
+    for idx, term in enumerate(test_stabilizer_list):
+        assert term == five_qubit_code_generators[idx]
 
 
 def test_compute_action_identity():
@@ -265,4 +292,3 @@ def test_stabilizer_projection_ZZZ():
     true_state[0, 0] = true_state[7, 0] = 1
     true_state /= np.sqrt(2)
     assert np.allclose(true_state, np.array(stabilizer_state.todense()))
-

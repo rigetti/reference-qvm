@@ -10,9 +10,10 @@ pyquil.
 Given
 """
 import sys
+from functools import reduce
 from scipy.sparse import csc_matrix
 import numpy as np
-from pyquil.paulis import PauliTerm
+from pyquil.paulis import PauliTerm, sX, sZ, sY
 
 
 def compute_action(classical_state, pauli_operator, num_qubits):
@@ -140,3 +141,87 @@ def project_stabilized_state(stabilizer_list, num_qubits=None,
     state /= np.sqrt(float(normalization.real))  # this is needed or it will cast as a np.matrix
 
     return state
+
+
+def pauli_stabilizer_to_binary_stabilizer(stabilizer_list):
+    """
+    Convert a list of stabilizers represented as PauliTerms to a binary tableau form
+
+    :param List stabilizer_list: list of stabilizers where each element is a PauliTerm
+    :return: return an integer matrix representing the stabilizers where each row is a
+             stabilizer.  The size of the matrix is n x (2 * n) where n is the maximum
+             qubit index.
+    """
+    if not all([isinstance(x, PauliTerm) for x in stabilizer_list]):
+        raise TypeError("At least one element of stabilizer_list is not a PauliTerm")
+
+    max_qubit = max([max(x.get_qubits()) for x in stabilizer_list]) + 1
+    stabilizer_tableau = np.zeros((len(stabilizer_list), 2 * max_qubit + 1), dtype=int)
+    for row_idx, term in enumerate(stabilizer_list):
+        for i, pterm in term:  # iterator for each tensor-product element of the Pauli operator
+            if pterm == 'X':
+                stabilizer_tableau[row_idx, i] = 1
+            elif pterm == 'Z':
+                stabilizer_tableau[row_idx, i + max_qubit] = 1
+            elif pterm == 'Y':
+                stabilizer_tableau[row_idx, i] = 1
+                stabilizer_tableau[row_idx, i + max_qubit] = 1
+            else:
+                # term is identity
+                pass
+
+        if not (np.isclose(term.coefficient, -1) or np.isclose(term.coefficient, 1)):
+            raise ValueError("stabilizers must have a +/- coefficient")
+
+        if int(np.sign(term.coefficient.real)) == 1:
+            stabilizer_tableau[row_idx, -1] = 0
+        elif int(np.sign(term.coefficient.real)) == -1:
+            stabilizer_tableau[row_idx, -1] = 1
+        else:
+            raise TypeError('unrecognized on pauli term of stabilizer')
+
+    return stabilizer_tableau
+
+
+def binary_stabilizer_to_pauli_stabilizer(stabilizer_tableau):
+    """
+    Convert a stabilizer tableau to a list of PauliTerms
+
+    :param stabilizer_tableau:  Stabilizer tableau to turn into pauli terms
+    :return: a list of PauliTerms representing the tableau
+    :rytpe: List of PauliTerms
+    """
+    stabilizer_list = []
+    num_qubits = (stabilizer_tableau.shape[1] - 1) // 2
+    for nn in range(stabilizer_tableau.shape[0]):  # iterate through the rows
+        stabilizer_element = []
+        for ii in range(num_qubits):
+            if stabilizer_tableau[nn, ii] == 1 and stabilizer_tableau[nn, ii + num_qubits] == 0:
+                stabilizer_element.append(sX(ii))
+            elif stabilizer_tableau[nn, ii] == 0 and stabilizer_tableau[nn, ii + num_qubits] == 1:
+                stabilizer_element.append(sZ(ii))
+            elif stabilizer_tableau[nn, ii] == 1 and stabilizer_tableau[nn, ii + num_qubits] == 1:
+                stabilizer_element.append(sY(ii))
+
+        stabilizer_term = reduce(lambda x, y: x * y, stabilizer_element) * ((-1) ** stabilizer_tableau[nn, -1])
+        stabilizer_list.append(stabilizer_term)
+    return stabilizer_list
+
+
+def symplectic_inner_product(vector1, vector2):
+    """
+    Operators commute if the symplectic inner product of their binary form is zero
+
+    Operators anticommute if symplectic inner product of their binary form is one
+
+    :param vector1: binary form of operator with no sign info
+    :param vector2: binary form of a pauli operator with no sign info
+    :return: 0, 1
+    """
+    if vector1.shape != vector2.shape:
+        raise ValueError("vectors must be the same size.")
+
+    # TODO: add a check for binary or integer linear arrays
+
+    hadamard_product = np.multiply(vector1, vector2)
+    return reduce(lambda x, y: x ^ y, hadamard_product)
