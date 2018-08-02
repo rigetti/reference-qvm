@@ -9,7 +9,6 @@ pyquil.
 
 Given
 """
-import sys
 from functools import reduce
 from scipy.sparse import csc_matrix
 import numpy as np
@@ -73,9 +72,10 @@ def state_family_generator(state, pauli_operator):
     This is accomplished in a sparse format where a sparse vector is returned
     after the action is accumulate in a new list of data and indices
 
-    :param state:
-    :param pauli_operator:
-    :return:
+    :param csc_matrix state: wavefunction represented as a column sparse matrix
+    :param PauliTerm pauli_operator: action to apply to the state
+    :return: new state
+    :rtype: csc_matrix
     """
     if not isinstance(state, csc_matrix):
         raise TypeError("we only take csc_matrix")
@@ -104,10 +104,9 @@ def project_stabilized_state(stabilizer_list, num_qubits=None,
 
     |psi> = (1/2^{n}) * Product_{i=0}{n-1}[ 1 + G_{i}] |vac>
 
-    :param stabilizer_list:
+    :param List stabilizer_list: set of PauliTerms that are the stabilizers
     :param num_qubits: integer number of qubits
-    :param classical_state: Default None.  Defaults to |+>^{otimes n}
-
+    :param classical_state: Default None.  Defaults to |+>^{\otimes n}
     :return: state projected by stabilizers
     """
     if num_qubits is None:
