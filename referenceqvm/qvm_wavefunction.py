@@ -128,26 +128,6 @@ class QVM_Wavefunction(QAM):
 
         return measured_val, unitary
 
-    def find_label(self, label):
-        """
-        Helper function that iterates over the program and looks for a
-        JumpTarget that has a Label matching the input label.
-
-        :param Label label: Label object to search for in program
-
-        :return: program index where Label is found
-        :rtype: int
-        """
-        assert isinstance(label, Label)
-        for index, action in enumerate(self.program):
-            if isinstance(action, JumpTarget):
-                if label == action.label:
-                    return index
-
-        # Label was not found in program.
-        raise RuntimeError("Improper program - Jump Target not found in the "
-                           "input program!")
-
     def _transition(self, instruction):
         """
         Implements a transition on the wf-qvm.

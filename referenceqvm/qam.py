@@ -18,6 +18,7 @@
 QAM superclass. Implements state machine model, program loading and processing,
 kernel - leaving details of evolution up to subclasses.
 """
+import sys
 import numpy as np
 
 from referenceqvm.unitary_generator import value_get
@@ -26,7 +27,8 @@ from pyquil.quil import Program
 from pyquil.quilbase import (Gate,
                              Measurement,
                              UnaryClassicalInstruction,
-                             BinaryClassicalInstruction)
+                             BinaryClassicalInstruction,
+                             Label, JumpTarget)
 
 
 class QAM(object):
@@ -91,12 +93,22 @@ class QAM(object):
 
         # NOTE: all_inst is set by the subclass
         if invalid is True and self.all_inst is False:
-            raise TypeError("In QVM_Unitary, only Gates and DefGates are "
-                            "supported")
+            raise TypeError("Some gates used are not allowed in this QAM")
 
         # set internal program and counter to their appropriate values
         self.program = pyquil_program
         self.program_counter = 0
+
+        # setup quantum and classical memory
+        q_max, c_max = self.identify_bits()
+        if c_max <= 512:  # allocate at least 512 cbits (as floor)
+            c_max = 512
+        self.num_qubits = q_max
+        self.classical_memory = np.zeros(c_max).astype(bool)
+
+    def memory_reset(self):
+        if self.program is None:
+            raise TypeError("Program must be loaded to call reset")
 
         # setup quantum and classical memory
         q_max, c_max = self.identify_bits()
@@ -167,6 +179,26 @@ class QAM(object):
             halted = self.transition(self.current_instruction())
             if halted:
                 break
+
+    def find_label(self, label):
+        """
+        Helper function that iterates over the program and looks for a
+        JumpTarget that has a Label matching the input label.
+
+        :param Label label: Label object to search for in program
+
+        :return: program index where Label is found
+        :rtype: int
+        """
+        assert isinstance(label, Label)
+        for index, action in enumerate(self.program):
+            if isinstance(action, JumpTarget):
+                if label == action.label:
+                    return index
+
+        # Label was not found in program.
+        raise RuntimeError("Improper program - Jump Target not found in the "
+                           "input program!")
 
     def transition(self, instruction):
         """
