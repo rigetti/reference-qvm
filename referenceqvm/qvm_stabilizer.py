@@ -88,17 +88,16 @@ class QVM_Stabilizer(QAM):
             raise NotImplementedError("QAM needs to be subclassed in order to "
                                       "load program")
 
-        # create defgate dictionary
-        defined_gates = {}
-        for dg in pyquil_program.defined_gates:
-            defined_gates[dg.name] = dg.matrix
-        self.defgate_set = defined_gates
+        # # create defgate dictionary
+        # defined_gates = {}
+        # for dg in pyquil_program.defined_gates:
+        #     defined_gates[dg.name] = dg.matrix
+        # self.defgate_set = defined_gates
 
-        # if QVM_Unitary, check if all instructions are valid.
         invalid = False
         for instr in pyquil_program:
             if isinstance(instr, Gate):
-                if not (instr.name in self.gate_set.keys() or instr.name in self.defgate_set.keys()):
+                if not instr.name in self.gate_set.keys():
                     invalid = True
                     break
             elif isinstance(instr, Measurement):
@@ -226,6 +225,8 @@ class QVM_Stabilizer(QAM):
             self.tableau = self._n_qubit_tableau(self.num_qubits)
             self.kernel()
             results.append(list(map(int, self.classical_memory[classical_addresses])))
+            # results.append([int(b) for b in self.classical_memory[classical_addresses]])
+            assert results[-1] == [int(b) for b in self.classical_memory[classical_addresses]]
 
             # reset qvm
             self.memory_reset()
@@ -249,8 +250,7 @@ class QVM_Stabilizer(QAM):
         self.tableau = self._n_qubit_tableau(self.num_qubits)
         self.kernel()
         stabilizers = binary_stabilizer_to_pauli_stabilizer(self.stabilizer_tableau())
-        pauli_ops = list(map(lambda x: 0.5 * (sI(0) + x), stabilizers))
-        pauli_ops = reduce(lambda x, y: x * y, pauli_ops)
+        pauli_ops = reduce(lambda x, y: x * y, [0.5 * (sI(0) + b) for b in stabilizers])
         return tensor_up(pauli_ops, self.num_qubits)
 
     def wavefunction(self, program):
@@ -267,7 +267,7 @@ class QVM_Stabilizer(QAM):
         self.kernel()
         stabilizers = binary_stabilizer_to_pauli_stabilizer(self.stabilizer_tableau())
         stabilizer_state = project_stabilized_state(stabilizers)
-        stabilizer_state = np.array(stabilizer_state.todense())  # todense() returns a matrixlib type
+        stabilizer_state = stabilizer_state.toarray()
         return Wavefunction(stabilizer_state.flatten())
 
     def stabilizer_tableau(self):
@@ -322,7 +322,7 @@ class QVM_Stabilizer(QAM):
         """
         phase_accumulator = 0
         for j in range(self.num_qubits):
-            # self._g_update(x_{hj}, z_{hj}, x_{ij}, z_{ij})
+            # self._g_update(x_{ij}, z_{ij}, x_{hj}, z_{hj})
             phase_accumulator += self._g_update(self.tableau[i, j],
                                                 self.tableau[i, self.num_qubits + j],
                                                 self.tableau[h, j],
@@ -395,8 +395,8 @@ class QVM_Stabilizer(QAM):
         :param t: target qubit index
         :return: 0/1 phase update for r_{i}
         """
-        return self.tableau[i, -1] ^ (self.tableau[i, c] * self.tableau[i, t + self.num_qubits]) * (
-                                  self.tableau[i, t] ^ self.tableau[i, c + self.num_qubits] ^ 1)
+        return self.tableau[i, -1] ^ (self.tableau[i, c] * self.tableau[i, t + self.num_qubits]) * \
+                                     (self.tableau[i, t] ^ self.tableau[i, c + self.num_qubits] ^ 1)
 
     def _apply_hadamard(self, instruction):
         """

@@ -88,7 +88,7 @@ def state_family_generator(state, pauli_operator):
     rindices, cindices = state.nonzero()
     for ridx, cidx in zip(rindices, cindices):
         # this is so gross looking
-        bitstring = list(map(int, np.binary_repr(ridx, width=num_qubits)))[::-1]
+        bitstring = [int(x) for x in np.binary_repr(ridx, width=num_qubits)][::-1]
         new_ket, new_coefficient = compute_action(bitstring, pauli_operator, num_qubits)
         new_indices.append(int("".join([str(x) for x in new_ket[::-1]]), 2))
         new_coeffs.append(state[ridx, cidx] * new_coefficient * pauli_operator.coefficient)
@@ -136,8 +136,8 @@ def project_stabilized_state(stabilizer_list, num_qubits=None,
         state += state_family_generator(state, generator)
         state /= 2
 
-    normalization = (state.conj().T.dot(state)).todense()
-    state /= np.sqrt(float(normalization.real))  # this is needed or it will cast as a np.matrix
+    normalization = (state.conj().T.dot(state)).toarray()
+    state /= np.sqrt(float(normalization.real))
 
     return state
 
