@@ -202,6 +202,11 @@ def permutation_arbitrary(args, num_qubits):
         if not (0 <= ind < num_qubits):
             raise ValueError("Permutation SWAP index not valid")
 
+    seen = set()
+    for x in inds:
+        if x in seen:
+            raise ValueError("Duplicate qubit %d found" % x)
+
     # Begin construction of permutation
     perm = sps.eye(2 ** num_qubits).astype(np.complex128)
 
