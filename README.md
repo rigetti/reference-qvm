@@ -1,17 +1,16 @@
-[![Build Status](https://semaphoreci.com/api/v1/rigetti/reference-qvm/branches/master/badge.svg)](https://semaphoreci.com/rigetti/reference-qvm)
+## Reference QVM is deprecated. Most of the features have been integrated into [pyQuil](https://github.com/rigetti/pyquil/) and are actively developed there.
 
 # Reference QVM
 
-The `referenceqvm` is the reference implementation of the QVM outlined in the
+The `referenceqvm` was a reference implementation of the QVM outlined in the
 arXiv:1608:03355 by Robert Smith, Spike Curtis, and Will Zeng. It is a research package that 
 supports rapid prototyping and development of quantum programs using pyQuil.
 
 Currently, this QVM supports a subset of functionality in the Quil specifications, 
-excepting certain functions (DEFCIRCUIT, WAIT, NOP).
+excepting certain functions (DEFCIRCUIT, WAIT, NOP), as well as prototypes for
+Kraus operator noise simulations and CHP/clifford circuit simulation.
 
-Noise models (dephasing, Kraus operators), parametrization with bits in 
-classical memory, and other features will be added in future releases.
-
+The functionality prototyped in this repository has been integrated into [pyQuil](https://github.com/rigetti/pyquil/).
 
 ## Installation
 
