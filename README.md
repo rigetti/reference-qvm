@@ -14,7 +14,7 @@ The functionality prototyped in this repository has been integrated into [pyQuil
 
 ## PyQuil
 
-`referenceqvm` functionality is now in pyquil in the following modules: `unitary_tools.py`, `reference_simulator.py`, `gate_matrices.py`, and `pyqvm.py`. Additionally, there are more performant referenceqvm-style pure-python simulators in `numpy_simulator.py`. The clifford circuit simulation has not been ported, but we would love to accept that as a community contribution (with some clean-up and integration work to play nice with pyQuil).
+`referenceqvm` functionality is now in pyQuil in the following modules: `unitary_tools.py`, `reference_simulator.py`, `gate_matrices.py`, and `pyqvm.py`. Additionally, there are more performant referenceqvm-style pure-python simulators in `numpy_simulator.py`. The clifford circuit simulation has not been ported, but we would love to accept that as a community contribution (with some clean-up and integration work to play nice with pyQuil).
 
 ## Installation
 
